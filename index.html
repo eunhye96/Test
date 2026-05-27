@@ -357,7 +357,7 @@ DATA.forEach((d,i)=>d.id=i);
 
 let activeArea="all",activeFilter="all";
 let visited={};
-let planner=[{day:1,meals:{점심:[],저녁:[],간식:[]}},{day:2,meals:{점심:[],저녁:[],간식:[]}},{day:3,meals:{점심:[],저녁:[],간식:[]}}];
+let planner=[{day:1,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:2,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:3,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}}];
 const defaultPlanner=[{day:1,meals:{점심:[],저녁:[],간식:[]}},{day:2,meals:{점심:[],저녁:[],간식:[]}},{day:3,meals:{점심:[],저녁:[],간식:[]}}];
 let modalTarget=null;
 
@@ -524,27 +524,35 @@ function renderPlanner(){
   planner.forEach((day,di)=>{
     html+=`<div class="day-block"><div class="day-title">🗓️ ${day.day}일차
       <span style="margin-left:auto;font-size:.8rem;cursor:pointer;color:var(--text-light)" onclick="removeDay(${di})">✕ 삭제</span></div>`;
-    ['점심','저녁','간식'].forEach(meal=>{
+    ['점심','저녁','간식','관광','메모'].forEach(meal=>{
       const items=day.meals[meal]||[];
-      const mealEmoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':'🍡';
-      html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot">`;
-      if(items.length===0) html+=`<span class="meal-empty">탭해서 추가...</span>`;
-      items.forEach((name,ci)=>{
-        var did=DATA.find(function(d){return d.name===name});
-        var mapBtn=(did&&PLACE_LL[name])?'<span class="chip-map" onclick="event.stopPropagation();flyToPlace('+did.id+')">📍</span>':'';
-        html+=`<span class="meal-chip">${name}${mapBtn}<span class="chip-remove" onclick="event.stopPropagation();removeMeal(${di},'${meal}',${ci})">✕</span></span>`;
-      });
-      html+=`</div><button class="add-to-meal-btn" onclick="event.stopPropagation();openModal(${di},'${meal}')">+ 추가</button></div>`;
+      const mealEmoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':meal==='간식'?'🍡':meal==='관광'?'🏛️':'📝';
+      if(meal==='메모'){
+        // Memo is a text input, not chips
+        const memoVal=items.length?items[0]:'';
+        html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot"><input type="text" value="${(memoVal||'').replace(/"/g,'&quot;')}" placeholder="메모 입력..." onchange="saveMemo(${di},this.value)" style="flex:1;border:none;background:transparent;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;color:var(--text);min-width:0"></div></div>`;
+      }else{
+        html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot">`;
+        if(items.length===0) html+=`<span class="meal-empty">탭해서 추가...</span>`;
+        items.forEach((name,ci)=>{
+          var did=DATA.find(function(d){return d.name===name});
+          var mapBtn=(did&&PLACE_LL[name])?'<span class="chip-map" onclick="event.stopPropagation();flyToPlace('+did.id+')">📍</span>':'';
+          html+=`<span class="meal-chip">${name}${mapBtn}<span class="chip-remove" onclick="event.stopPropagation();removeMeal(${di},'${meal}',${ci})">✕</span></span>`;
+        });
+        html+=`</div><button class="add-to-meal-btn" onclick="event.stopPropagation();openModal(${di},'${meal}')">+ 추가</button></div>`;
+      }
+    });
     });
     html+=`</div>`;
   });
   document.getElementById('plannerContent').innerHTML=html;
 }
 
-function addDay(){planner.push({day:planner.length+1,meals:{점심:[],저녁:[],간식:[]}});savePlanner();renderPlanner()}
+function addDay(){planner.push({day:planner.length+1,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}});savePlanner();renderPlanner()}
 function removeDay(di){if(planner.length<=1)return;planner.splice(di,1);planner.forEach((d,i)=>d.day=i+1);savePlanner();renderPlanner()}
-function clearPlanner(){if(!confirm('일정을 초기화할까요?'))return;planner=[{day:1,meals:{점심:[],저녁:[],간식:[]}},{day:2,meals:{점심:[],저녁:[],간식:[]}},{day:3,meals:{점심:[],저녁:[],간식:[]}}];savePlanner();renderPlanner()}
+function clearPlanner(){if(!confirm('일정을 초기화할까요?'))return;planner=[{day:1,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:2,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:3,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}}];savePlanner();renderPlanner()}
 function removeMeal(di,meal,ci){planner[di].meals[meal].splice(ci,1);savePlanner();renderPlanner()}
+function saveMemo(di,val){if(!planner[di].meals['메모'])planner[di].meals['메모']=[];planner[di].meals['메모']=[val];savePlanner()}
 
 // Quick add from list card
 var quickAddName=null;
@@ -553,8 +561,8 @@ function openQuickAdd(name){
   var html='<div style="font-family:Gaegu,cursive;font-size:1.2rem;font-weight:700;color:var(--brown);margin-bottom:.8rem">📅 '+name+'</div>';
   planner.forEach(function(day,di){
     html+='<div style="margin-bottom:.6rem"><div style="font-family:Gaegu,cursive;font-weight:700;color:var(--coral);margin-bottom:.3rem">'+day.day+'일차</div>';
-    ['점심','저녁','간식'].forEach(function(meal){
-      var emoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':'🍡';
+    ['점심','저녁','간식','관광'].forEach(function(meal){
+      var emoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':meal==='간식'?'🍡':'🏛️';
       html+='<button onclick="doQuickAdd('+di+',\''+meal+'\')" style="margin:.15rem .2rem;padding:.3rem .7rem;border-radius:100px;border:1.5px solid var(--pink-light);background:var(--white);font-size:.82rem;cursor:pointer;transition:all .2s">'+emoji+' '+meal+'</button>';
     });
     html+='</div>';
