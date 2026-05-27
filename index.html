@@ -6,7 +6,7 @@
 <title>🗼 도쿄 여행 가이드 🍡</title>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
@@ -629,12 +629,15 @@ document.querySelector('[data-panel="map"]').classList.add('active');
 // Try to build map multiple times
 function tryBuild(){if(typeof L!=='undefined'&&!theMap){buildMap()}}
 
-// Try building map at various times
-setTimeout(tryBuild,500);
+// Try building map - keep retrying until Leaflet loads
+function tryBuild(){if(typeof L!=='undefined'&&L.map&&!theMap){buildMap();if(theMap)theMap.invalidateSize()}}
 setTimeout(tryBuild,1000);
 setTimeout(tryBuild,2000);
-setTimeout(function(){tryBuild();if(theMap)theMap.invalidateSize()},2500);
-setTimeout(function(){if(theMap)theMap.invalidateSize()},3500);
+setTimeout(tryBuild,3000);
+setTimeout(tryBuild,4000);
+setTimeout(tryBuild,5000);
+setTimeout(tryBuild,7000);
+setTimeout(tryBuild,10000);
 </script>
 </body>
 </html>

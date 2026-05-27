@@ -4,59 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Debug</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
 </head>
 <body>
-<h2>Debug Test</h2>
-<div id="log" style="font-family:monospace;font-size:14px;padding:10px;background:#f0f0f0;white-space:pre-wrap"></div>
-
+<h2>Debug Test v2</h2>
+<div id="log" style="font-family:monospace;font-size:13px;padding:10px;background:#f0f0f0;white-space:pre-wrap"></div>
 <div id="testMap" style="width:100%;height:300px;background:#ddd;margin-top:10px"></div>
 
 <script>
-var log = document.getElementById('log');
-function L(msg){ log.textContent += msg + '\n'; }
+var logEl = document.getElementById('log');
+function addLog(msg){ logEl.textContent += msg + '\n'; }
 
-L('1. Page loaded');
-L('2. User agent: ' + navigator.userAgent);
+addLog('1. Page loaded');
 
-// Test: can we load jsdelivr?
-var s1 = document.createElement('script');
-s1.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-s1.onload = function(){
-  L('3. ✅ jsdelivr Leaflet loaded!');
-  L('4. typeof L = ' + typeof L);
+// Test jsdelivr
+var img = new Image();
+img.onload = function(){ addLog('2. ✅ jsdelivr reachable (image test)'); };
+img.onerror = function(){ addLog('2. ❌ jsdelivr NOT reachable'); };
+img.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png';
+
+// Load Leaflet
+var js = document.createElement('script');
+js.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+js.onload = function(){
+  addLog('3. ✅ Leaflet JS loaded');
+  addLog('4. typeof L.map = ' + typeof L.map);
   try {
-    var css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
-    document.head.appendChild(css);
-    
-    setTimeout(function(){
-      var map = L.map('testMap').setView([35.676, 139.735], 12);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      log.textContent += '5. ✅ Map created!\n';
-      setTimeout(function(){ map.invalidateSize(); log.textContent += '6. ✅ invalidateSize done\n'; }, 500);
-    }, 500);
+    var map = L.map('testMap').setView([35.676, 139.735], 12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    addLog('5. ✅ Map created!');
+    setTimeout(function(){ map.invalidateSize(); addLog('6. ✅ invalidateSize done'); }, 500);
   } catch(e) {
-    log.textContent += '5. ❌ Map error: ' + e.message + '\n';
+    addLog('5. ❌ Map error: ' + e.message);
   }
 };
-s1.onerror = function(){
-  L('3. ❌ jsdelivr FAILED');
-  // try cdnjs
-  var s2 = document.createElement('script');
-  s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-  s2.onload = function(){ L('4. ✅ cdnjs loaded'); };
-  s2.onerror = function(){ L('4. ❌ cdnjs ALSO FAILED'); };
-  document.body.appendChild(s2);
-};
-document.body.appendChild(s1);
-
-// Test firebase too
-var s3 = document.createElement('script');
-s3.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
-s3.onload = function(){ L('Firebase: ✅ loaded'); };
-s3.onerror = function(){ L('Firebase: ❌ FAILED'); };
-document.body.appendChild(s3);
+js.onerror = function(){ addLog('3. ❌ Leaflet JS FAILED to load from jsdelivr'); };
+document.body.appendChild(js);
 </script>
 </body>
 </html>
