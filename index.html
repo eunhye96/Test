@@ -162,7 +162,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 <!-- MAP PANEL -->
 <div class="panel active" id="panel-map">
   <div class="map-container">
-    <div id="realMap"><div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.1rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 로딩 중...</div></div>
+    <div id="realMap"></div>
+    <div id="mapTooltip" style="display:none;position:fixed;z-index:999;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:2px solid var(--pink-light);max-width:220px;font-size:.82rem;pointer-events:none"></div>
     <div style="text-align:center;margin:.8rem 0;font-family:'Gaegu',cursive;color:var(--brown-light);font-size:.9rem">👇 지역을 탭하면 리스트로 이동!</div>
     <div class="map-area-grid" id="areaGrid"></div>
   </div>
@@ -398,7 +399,8 @@ function updateSyncBadge(state){
 // Auto-init
 initFirebase();
 
-// ===== MAP =====
+
+// ===== MAP (Pure SVG - no external libraries!) =====
 var AREA_COLORS={"신주쿠":"#E85D4A","시부야":"#D84B94","오모테산도":"#2EAD6D","하라주쿠":"#8B5CF6","에비스":"#E8943A","롯폰기":"#3B82F6","긴자":"#D4960A","아사쿠사":"#DC4E4E","카페":"#C06090","기타":"#777"};
 var PLACE_LL={
   "이치란라멘":[35.6906,139.7028],"미락정":[35.6957,139.7044],"타츠노야":[35.6961,139.6984],"돈돈":[35.6943,139.7011],
@@ -433,100 +435,23 @@ var PLACE_LL={
   "카멜백":[35.6656,139.6922],
   "우에노공원":[35.7146,139.7732],"아카바네바시역":[35.6565,139.7455]
 };
+var MAP_B={latMin:35.640,latMax:35.720,lngMin:139.685,lngMax:139.800};
+var SW=800,SH=500;
+function toXY(lat,lng){return{x:((lng-MAP_B.lngMin)/(MAP_B.lngMax-MAP_B.lngMin))*SW,y:((MAP_B.latMax-lat)/(MAP_B.latMax-MAP_B.latMin))*SH}}
 
-var theMap=null;
-
-function renderAreaGrid(){
-  var grid=document.getElementById('areaGrid');
-  if(!grid)return;
-  var html='';
-  areaOrder.forEach(function(a){
-    var cnt=DATA.filter(function(d){return d.area===a}).length;
-    var col=AREA_COLORS[a]||'#999';
-    html+='<div class="map-area-card" onclick="mapGoToList(\''+a+'\')" style="border-color:'+col+'22">'
-      +'<span class="area-emoji">'+areaEmojis[a]+'</span>'
-      +'<div class="area-name"><span class="area-dot" style="background:'+col+'"></span>'+(a==="긴자"?"긴자·도쿄역":a==="기타"?"관광·쇼핑":a)+'</div>'
-      +'<div class="area-count">'+cnt+'곳</div>'
-      +'</div>';
-  });
-  grid.innerHTML=html;
+function renderSVGMap(){
+  var el=document.getElementById('realMap');if(!el)return;
+  var grid='';
+  for(var i=0;i<=10;i++){var gy=i*(SH/10);grid+='<line x1="0" y1="'+gy+'" x2="'+SW+'" y2="'+gy+'" stroke="#e8ddd0" stroke-width="0.5"/>';var gx=i*(SW/10);grid+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="'+SH+'" stroke="#e8ddd0" stroke-width="0.5"/>';}
+  var alp={"신주쿠":[35.693,139.700],"시부야":[35.658,139.700],"오모테산도":[35.667,139.710],"하라주쿠":[35.672,139.705],"에비스":[35.648,139.712],"롯폰기":[35.662,139.730],"긴자":[35.675,139.765],"아사쿠사":[35.710,139.795]};
+  var al='';for(var a in alp){var p=toXY(alp[a][0],alp[a][1]);al+='<text x="'+p.x+'" y="'+p.y+'" text-anchor="middle" fill="'+(AREA_COLORS[a]||"#999")+'" fill-opacity="0.25" font-size="16" font-family="Gaegu,cursive" font-weight="700">'+a+'</text>';}
+  var pins='';DATA.forEach(function(d,i){var ll=PLACE_LL[d.name];if(!ll)return;var p=toXY(ll[0],ll[1]);if(p.x<-10||p.x>SW+10||p.y<-10||p.y>SH+10)return;var col=AREA_COLORS[d.area]||'#999';var r=d.star?7:5;pins+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+r+'" fill="'+col+'" stroke="#fff" stroke-width="1.5" style="cursor:pointer" data-idx="'+i+'" class="map-dot"/>';});
+  el.innerHTML='<svg viewBox="0 0 '+SW+' '+SH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;background:linear-gradient(180deg,#FFF8F0,#F5EDE3);border-radius:18px">'+grid+al+pins+'</svg>';
+  el.onclick=function(e){var dot=e.target;if(!dot.classList||!dot.classList.contains('map-dot'))return;var d=DATA[parseInt(dot.getAttribute('data-idx'))];if(!d)return;var tip=document.getElementById('mapTooltip');tip.innerHTML='<div style="font-family:Gaegu,cursive;font-size:1.1rem;font-weight:700;color:#8B6F5A">'+(d.star?'⭐ ':'')+d.name+'</div><div style="font-size:.75rem;color:#8B7B6F;margin:2px 0">'+d.cat+' · '+(areaEmojis[d.area]||'')+' '+d.area+'</div><div style="font-size:.78rem;color:#8B7B6F;background:#FFF8F0;padding:3px 6px;border-radius:6px;margin-top:4px">'+d.note+'</div>'+(d.rating?'<div style="font-size:.75rem;margin-top:3px">⭐ '+d.rating+'</div>':'');tip.style.display='block';var r=dot.getBoundingClientRect();tip.style.left=Math.min(r.left,window.innerWidth-230)+'px';tip.style.top=(r.top>180?(r.top-tip.offsetHeight-10):(r.bottom+10))+'px';};
+  document.addEventListener('click',function(e){if(!e.target.classList||!e.target.classList.contains('map-dot')){document.getElementById('mapTooltip').style.display='none';}});
 }
-
-function buildMap(){
-  try{
-    if(typeof L==='undefined')return;
-    var el=document.getElementById('realMap');
-    if(!el||el.offsetWidth<10)return;
-    if(theMap)return;
-
-    theMap=L.map('realMap',{zoomControl:true,attributionControl:false}).setView([35.6762,139.735],12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(theMap);
-
-    DATA.forEach(function(d){
-      var ll=PLACE_LL[d.name];
-      if(!ll)return;
-      var col=AREA_COLORS[d.area]||'#999';
-      var icon=L.divIcon({
-        className:'',
-        html:'<div style="width:22px;height:22px;border-radius:50%;background:'+col+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">'+(d.star?'★':'')+'</div>',
-        iconSize:[22,22],iconAnchor:[11,11]
-      });
-      var txt='<div style="font-family:Gaegu,cursive;font-size:1.1rem;font-weight:700;color:#8B6F5A">'+(d.star?'⭐ ':'')+d.name+'</div>'
-        +'<div style="font-size:.75rem;color:#8B7B6F;margin:2px 0">'+d.cat+' · '+(areaEmojis[d.area]||'')+' '+d.area+'</div>'
-        +'<div style="font-size:.78rem;color:#8B7B6F;background:#FFF8F0;padding:3px 6px;border-radius:6px;margin-top:4px">'+d.note+'</div>'
-        +(d.rating?'<div style="font-size:.75rem;margin-top:3px">⭐ '+d.rating+'</div>':'');
-      L.marker(ll,{icon:icon}).addTo(theMap).bindPopup(txt,{maxWidth:220});
-    });
-
-    setTimeout(function(){if(theMap)theMap.invalidateSize()},300);
-    setTimeout(function(){if(theMap)theMap.invalidateSize()},1000);
-  }catch(e){
-    console.error('Map error:',e);
-    document.getElementById('realMap').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.1rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 오류<br><small style="color:#A68B7B">'+e.message+'</small></div>';
-  }
-}
-
-// Dynamically load Leaflet CSS + JS with fallback CDNs
-function loadLeaflet(){
-  var css=document.createElement('link');
-  css.rel='stylesheet';
-  css.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
-  document.head.appendChild(css);
-
-  var cdns=[
-    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
-  ];
-  var idx=0;
-  function tryNext(){
-    if(idx>=cdns.length){
-      document.getElementById('realMap').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.1rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도를 불러올 수 없어요<br><small style="color:#A68B7B">아래 지역 카드를 눌러주세요!</small></div>';
-      return;
-    }
-    var js=document.createElement('script');
-    js.src=cdns[idx];
-    js.onload=function(){
-      setTimeout(buildMap,200);
-      setTimeout(buildMap,800);
-      setTimeout(buildMap,2000);
-    };
-    js.onerror=function(){idx++;tryNext()};
-    document.body.appendChild(js);
-  }
-  tryNext();
-}
-
-function mapGoToList(area){
-  document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-  document.querySelector('[data-panel="list"]').classList.add('active');
-  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-  document.getElementById('panel-list').classList.add('active');
-  activeArea=area;
-  document.querySelectorAll('.nav-pill').forEach(function(p){p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});
-  renderList();
-  document.getElementById('panel-list').scrollIntoView({behavior:'smooth'});
-}
+function renderAreaGrid(){var grid=document.getElementById('areaGrid');if(!grid)return;var html='';areaOrder.forEach(function(a){var cnt=DATA.filter(function(d){return d.area===a}).length;var col=AREA_COLORS[a]||'#999';html+='<div class="map-area-card" onclick="mapGoToList(\''+a+'\')" style="border-color:'+col+'22"><span class="area-emoji">'+areaEmojis[a]+'</span><div class="area-name"><span class="area-dot" style="background:'+col+'"></span>'+(a==="긴자"?"긴자·도쿄역":a==="기타"?"관광·쇼핑":a)+'</div><div class="area-count">'+cnt+'곳</div></div>';});grid.innerHTML=html;}
+function mapGoToList(area){document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});document.querySelector('[data-panel="list"]').classList.add('active');document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});document.getElementById('panel-list').classList.add('active');activeArea=area;document.querySelectorAll('.nav-pill').forEach(function(p){p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});renderList();document.getElementById('panel-list').scrollIntoView({behavior:'smooth'});}
 
 // ===== PLANNER =====
 function renderPlanner(){
@@ -656,7 +581,7 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 });
 
 // Init
-renderAreaGrid();renderPlanner();renderList();loadLeaflet();
+renderSVGMap();renderAreaGrid();renderPlanner();renderList();
 </script>
 </body>
 </html>
