@@ -629,15 +629,13 @@ document.querySelector('[data-panel="map"]').classList.add('active');
 // Try to build map multiple times
 function tryBuild(){if(typeof L!=='undefined'&&!theMap){buildMap()}}
 
-// Try building map - keep retrying until Leaflet loads
-function tryBuild(){if(typeof L!=='undefined'&&L.map&&!theMap){buildMap();if(theMap)theMap.invalidateSize()}}
-setTimeout(tryBuild,1000);
-setTimeout(tryBuild,2000);
-setTimeout(tryBuild,3000);
-setTimeout(tryBuild,4000);
-setTimeout(tryBuild,5000);
-setTimeout(tryBuild,7000);
-setTimeout(tryBuild,10000);
+// Try building map - poll every 500ms until Leaflet is ready
+var mapPoll=setInterval(function(){
+  if(typeof L!=='undefined'&&L.map&&!theMap){
+    buildMap();
+    if(theMap){theMap.invalidateSize();clearInterval(mapPoll)}
+  }
+},500);
 </script>
 </body>
 </html>
