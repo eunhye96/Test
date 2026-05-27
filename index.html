@@ -112,7 +112,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .section-title{font-family:'Gaegu',cursive;font-size:1.5rem;font-weight:700;color:var(--brown)}
 .section-count{font-family:'Gaegu',cursive;font-size:.85rem;color:var(--white);background:var(--pink);padding:.1rem .55rem;border-radius:100px}
 .cards{display:grid;grid-template-columns:1fr;gap:.7rem}
-.card{background:var(--white);border-radius:14px;padding:.9rem 3.5rem .9rem 1.1rem;border:2px solid transparent;transition:all .3s cubic-bezier(.34,1.56,.64,1);cursor:default;position:relative;overflow:hidden}
+.card{background:var(--white);border-radius:14px;padding:.9rem 5rem .9rem 1.1rem;border:2px solid transparent;transition:all .3s cubic-bezier(.34,1.56,.64,1);cursor:default;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px;transition:all .3s}
 .card[data-cat="라멘"]::before,.card[data-cat="츠케멘"]::before{background:var(--coral)}.card[data-cat="야끼니꾸"]::before{background:#E85D4A}.card[data-cat="꼬치"]::before,.card[data-cat="닭꼬치"]::before{background:var(--peach)}.card[data-cat="돈가스"]::before,.card[data-cat="가츠동"]::before{background:var(--yellow)}.card[data-cat="스시"]::before,.card[data-cat="오마카세"]::before,.card[data-cat="회덮밥"]::before{background:var(--sky)}.card[data-cat="장어"]::before{background:var(--brown)}.card[data-cat="몬자야끼"]::before{background:var(--lavender)}.card[data-cat="함바그"]::before,.card[data-cat="떡갈비"]::before{background:#C97B5D}.card[data-cat="카레"]::before{background:#E8A840}.card[data-cat="카페"]::before,.card[data-cat="베이커리"]::before,.card[data-cat="디저트"]::before{background:var(--pink)}.card[data-cat="이자카야"]::before,.card[data-cat="술집"]::before{background:var(--mint)}.card[data-cat="기타"]::before{background:var(--text-light)}
 .card:hover{transform:translateY(-2px);border-color:var(--pink-light);box-shadow:0 6px 20px var(--shadow)}
@@ -129,6 +129,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .card-check:hover{border-color:var(--pink)}.card-check.checked{background:var(--pink);border-color:var(--pink)}.card-check.checked::after{content:'✓';color:white;font-weight:700}
 .card-map-btn{position:absolute;top:.7rem;right:2.2rem;width:22px;height:22px;border-radius:6px;background:var(--sky-light);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .3s;border:2px solid var(--sky)}
 .card-map-btn:hover{background:var(--sky);transform:scale(1.1)}
+.card-plan-btn{position:absolute;top:.7rem;right:3.7rem;width:22px;height:22px;border-radius:6px;background:var(--yellow-light);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .3s;border:2px solid var(--yellow)}
+.card-plan-btn:hover{background:var(--yellow);transform:scale(1.1)}
 .card.visited{opacity:.5}.card.visited .card-name{text-decoration:line-through;text-decoration-color:var(--pink)}
 .card .add-to-meal-btn{position:absolute;bottom:.6rem;right:.6rem}
 
@@ -238,6 +240,14 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 <div class="footer"><span class="footer-emoji">🍙🍡🍣</span>도쿄에서 맛있는 거 많이 먹자!<br><small style="font-size:.8rem;color:var(--text-light)">실시간 동기화 — 친구들과 함께! 🔄</small></div>
 
 <div class="sync-badge online" id="syncBadge">🟢 실시간 동기화 중</div>
+
+<!-- QUICK ADD MODAL -->
+<div class="modal-overlay" id="quickAddModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head"><h3>일정에 추가</h3><button class="modal-close" onclick="document.getElementById('quickAddModal').classList.remove('show')">✕</button></div>
+    <div id="quickAddContent" style="padding:1rem"></div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="mealModal">
@@ -535,6 +545,32 @@ function addDay(){planner.push({day:planner.length+1,meals:{점심:[],저녁:[],
 function removeDay(di){if(planner.length<=1)return;planner.splice(di,1);planner.forEach((d,i)=>d.day=i+1);savePlanner();renderPlanner()}
 function clearPlanner(){if(!confirm('일정을 초기화할까요?'))return;planner=[{day:1,meals:{점심:[],저녁:[],간식:[]}},{day:2,meals:{점심:[],저녁:[],간식:[]}},{day:3,meals:{점심:[],저녁:[],간식:[]}}];savePlanner();renderPlanner()}
 function removeMeal(di,meal,ci){planner[di].meals[meal].splice(ci,1);savePlanner();renderPlanner()}
+
+// Quick add from list card
+var quickAddName=null;
+function openQuickAdd(name){
+  quickAddName=name;
+  var html='<div style="font-family:Gaegu,cursive;font-size:1.2rem;font-weight:700;color:var(--brown);margin-bottom:.8rem">📅 '+name+'</div>';
+  planner.forEach(function(day,di){
+    html+='<div style="margin-bottom:.6rem"><div style="font-family:Gaegu,cursive;font-weight:700;color:var(--coral);margin-bottom:.3rem">'+day.day+'일차</div>';
+    ['점심','저녁','간식'].forEach(function(meal){
+      var emoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':'🍡';
+      html+='<button onclick="doQuickAdd('+di+',\''+meal+'\')" style="margin:.15rem .2rem;padding:.3rem .7rem;border-radius:100px;border:1.5px solid var(--pink-light);background:var(--white);font-size:.82rem;cursor:pointer;transition:all .2s">'+emoji+' '+meal+'</button>';
+    });
+    html+='</div>';
+  });
+  var overlay=document.getElementById('quickAddModal');
+  document.getElementById('quickAddContent').innerHTML=html;
+  overlay.classList.add('show');
+}
+function doQuickAdd(di,meal){
+  if(!quickAddName)return;
+  if(!planner[di].meals[meal])planner[di].meals[meal]=[];
+  planner[di].meals[meal].push(quickAddName);
+  savePlanner();renderPlanner();
+  document.getElementById('quickAddModal').classList.remove('show');
+  quickAddName=null;
+}
 function addMealItem(name){
   if(!modalTarget)return;
   const{dayIdx,meal}=modalTarget;
@@ -608,7 +644,7 @@ function renderList(){
       html+=`<div class="card ${isV?'visited':''}" data-cat="${item.cat}" id="card-${item.id}" style="animation-delay:${i*.04}s">
         <div class="card-check ${isV?'checked':''}" onclick="toggleVisit('${key.replace(/'/g,"\\'")}',this)"></div>
         ${hasLL?`<div class="card-map-btn" onclick="flyToPlace(${item.id})" title="지도에서 보기">📍</div>`:''}
-        <div class="card-top"><div><div class="card-name">${item.star?'<span class="star">★ </span>':''}${item.name}</div>
+        <div class="card-plan-btn" onclick="openQuickAdd('${item.name.replace(/'/g,"\\'")}')" title="일정에 추가">📅</div>        <div class="card-top"><div><div class="card-name">${item.star?'<span class="star">★ </span>':''}${item.name}</div>
         <div class="card-meta">${item.rating?`<span class="badge badge-rating">⭐ ${item.rating}</span>`:''}${(item.badges||[]).map(getBadgeHTML).join('')}</div></div>
         <span class="card-tag ${item.tag}">${item.cat}</span></div>
         <div class="card-note">${item.note}</div></div>`;
