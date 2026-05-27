@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🗼 도쿄 여행 가이드 🍡</title>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
-<script async src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<link rel="stylesheet" href="leaflet.css"/>
+<script src="leaflet.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
@@ -30,7 +30,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .main-tab{font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700;padding:.5rem 1.2rem;border-radius:100px;border:2px solid var(--pink-light);background:var(--white);color:var(--brown);cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
 .main-tab:hover,.main-tab.active{background:var(--coral);border-color:var(--coral);color:var(--white);transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,140,124,.3)}
 
-.panel{position:absolute;left:-9999px;width:100%;visibility:hidden}.panel.active{position:relative;left:auto;visibility:visible}
+.panel{display:none}.panel.active{display:block}
 
 /* ===== MAP PANEL ===== */
 .map-container{max-width:960px;margin:1.5rem auto;padding:0 1rem}
@@ -620,13 +620,9 @@ document.getElementById('panel-map').classList.add('active');
 document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
 document.querySelector('[data-panel="map"]').classList.add('active');
 
-// Poll for Leaflet and build map
-var mapPoll=setInterval(function(){
-  if(typeof L!=='undefined'&&L.map&&!theMap){
-    buildMap();
-    if(theMap){theMap.invalidateSize();clearInterval(mapPoll)}
-  }
-},500);
+// Build map immediately - Leaflet is loaded from local file
+buildMap();
+setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
 </script>
 </body>
 </html>
