@@ -451,49 +451,68 @@ function renderAreaGrid(){
 }
 
 function buildMap(){
-  if(typeof L==='undefined')return;
-  var el=document.getElementById('realMap');
-  if(!el||el.offsetWidth<10)return;
-  if(theMap)return; // already built
+  try{
+    if(typeof L==='undefined')return;
+    var el=document.getElementById('realMap');
+    if(!el||el.offsetWidth<10)return;
+    if(theMap)return;
 
-  theMap=L.map('realMap',{zoomControl:true,attributionControl:false}).setView([35.6762,139.735],12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(theMap);
+    theMap=L.map('realMap',{zoomControl:true,attributionControl:false}).setView([35.6762,139.735],12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(theMap);
 
-  DATA.forEach(function(d){
-    var ll=PLACE_LL[d.name];
-    if(!ll)return;
-    var col=AREA_COLORS[d.area]||'#999';
-    var icon=L.divIcon({
-      className:'',
-      html:'<div style="width:22px;height:22px;border-radius:50%;background:'+col+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">'+(d.star?'★':'')+'</div>',
-      iconSize:[22,22],iconAnchor:[11,11]
+    DATA.forEach(function(d){
+      var ll=PLACE_LL[d.name];
+      if(!ll)return;
+      var col=AREA_COLORS[d.area]||'#999';
+      var icon=L.divIcon({
+        className:'',
+        html:'<div style="width:22px;height:22px;border-radius:50%;background:'+col+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">'+(d.star?'★':'')+'</div>',
+        iconSize:[22,22],iconAnchor:[11,11]
+      });
+      var txt='<div style="font-family:Gaegu,cursive;font-size:1.1rem;font-weight:700;color:#8B6F5A">'+(d.star?'⭐ ':'')+d.name+'</div>'
+        +'<div style="font-size:.75rem;color:#8B7B6F;margin:2px 0">'+d.cat+' · '+(areaEmojis[d.area]||'')+' '+d.area+'</div>'
+        +'<div style="font-size:.78rem;color:#8B7B6F;background:#FFF8F0;padding:3px 6px;border-radius:6px;margin-top:4px">'+d.note+'</div>'
+        +(d.rating?'<div style="font-size:.75rem;margin-top:3px">⭐ '+d.rating+'</div>':'');
+      L.marker(ll,{icon:icon}).addTo(theMap).bindPopup(txt,{maxWidth:220});
     });
-    var txt='<div style="font-family:Gaegu,cursive;font-size:1.1rem;font-weight:700;color:#8B6F5A">'+(d.star?'⭐ ':'')+d.name+'</div>'
-      +'<div style="font-size:.75rem;color:#8B7B6F;margin:2px 0">'+d.cat+' · '+(areaEmojis[d.area]||'')+' '+d.area+'</div>'
-      +'<div style="font-size:.78rem;color:#8B7B6F;background:#FFF8F0;padding:3px 6px;border-radius:6px;margin-top:4px">'+d.note+'</div>'
-      +(d.rating?'<div style="font-size:.75rem;margin-top:3px">⭐ '+d.rating+'</div>':'');
-    L.marker(ll,{icon:icon}).addTo(theMap).bindPopup(txt,{maxWidth:220});
-  });
 
-  setTimeout(function(){theMap.invalidateSize()},300);
+    setTimeout(function(){if(theMap)theMap.invalidateSize()},300);
+    setTimeout(function(){if(theMap)theMap.invalidateSize()},1000);
+  }catch(e){
+    console.error('Map error:',e);
+    document.getElementById('realMap').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.1rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 오류<br><small style="color:#A68B7B">'+e.message+'</small></div>';
+  }
 }
 
-// Dynamically load Leaflet CSS + JS
+// Dynamically load Leaflet CSS + JS with fallback CDNs
 function loadLeaflet(){
   var css=document.createElement('link');
   css.rel='stylesheet';
-  css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  css.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
   document.head.appendChild(css);
 
-  var js=document.createElement('script');
-  js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-  js.onload=function(){
-    // Leaflet loaded! Try building map
-    setTimeout(buildMap,300);
-    setTimeout(buildMap,1000);
-    setTimeout(buildMap,2500);
-  };
-  document.body.appendChild(js);
+  var cdns=[
+    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
+  ];
+  var idx=0;
+  function tryNext(){
+    if(idx>=cdns.length){
+      document.getElementById('realMap').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.1rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도를 불러올 수 없어요<br><small style="color:#A68B7B">아래 지역 카드를 눌러주세요!</small></div>';
+      return;
+    }
+    var js=document.createElement('script');
+    js.src=cdns[idx];
+    js.onload=function(){
+      setTimeout(buildMap,200);
+      setTimeout(buildMap,800);
+      setTimeout(buildMap,2000);
+    };
+    js.onerror=function(){idx++;tryNext()};
+    document.body.appendChild(js);
+  }
+  tryNext();
 }
 
 function mapGoToList(area){
