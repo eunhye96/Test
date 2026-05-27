@@ -455,7 +455,22 @@ function buildMap(){
   setTimeout(function(){theMap.invalidateSize()},200);
 }
 
-function renderAreaGrid(){var grid=document.getElementById('areaGrid');if(!grid)return;var html='';areaOrder.forEach(function(a){var cnt=DATA.filter(function(d){return d.area===a}).length;var col=AREA_COLORS[a]||'#999';html+='<div class="map-area-card" onclick="mapGoToList(\''+a+'\')" style="border-color:'+col+'22"><span class="area-emoji">'+areaEmojis[a]+'</span><div class="area-name"><span class="area-dot" style="background:'+col+'"></span>'+(a==="긴자"?"긴자·도쿄역":a==="기타"?"관광·쇼핑":a)+'</div><div class="area-count">'+cnt+'곳</div></div>';});grid.innerHTML=html;}
+function mapZoomArea(area){
+  if(!theMap)return;
+  var pts=[];
+  DATA.forEach(function(d){
+    if(d.area!==area)return;
+    var ll=PLACE_LL[d.name];
+    if(ll)pts.push(ll);
+  });
+  if(pts.length){
+    var bounds=L.latLngBounds(pts);
+    theMap.fitBounds(bounds.pad(0.3),{maxZoom:15});
+  }
+  document.getElementById('realMap').scrollIntoView({behavior:'smooth'});
+}
+
+function renderAreaGrid(){var grid=document.getElementById('areaGrid');if(!grid)return;var html='';areaOrder.forEach(function(a){var cnt=DATA.filter(function(d){return d.area===a}).length;var col=AREA_COLORS[a]||'#999';html+='<div class="map-area-card" onclick="mapZoomArea(\''+a+'\')" style="border-color:'+col+'22"><span class="area-emoji">'+areaEmojis[a]+'</span><div class="area-name"><span class="area-dot" style="background:'+col+'"></span>'+(a==="긴자"?"긴자·도쿄역":a==="기타"?"관광·쇼핑":a)+'</div><div class="area-count">'+cnt+'곳</div></div>';});grid.innerHTML=html;}
 function mapGoToList(area){document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});document.querySelector('[data-panel="list"]').classList.add('active');document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});document.getElementById('panel-list').classList.add('active');activeArea=area;document.querySelectorAll('.nav-pill').forEach(function(p){p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});renderList();document.getElementById('panel-list').scrollIntoView({behavior:'smooth'});}
 
 // ===== PLANNER =====
