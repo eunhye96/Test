@@ -643,7 +643,16 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 
 // Init - delay map to ensure DOM is ready
 renderPlanner();renderList();
-setTimeout(renderMap,300);
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    renderMap();
+    // Keep retrying invalidateSize to make sure tiles load
+    var retries=[500,1000,2000,3500];
+    retries.forEach(function(ms){
+      setTimeout(function(){if(map){map.invalidateSize();map.setView([35.6762,139.7350],12)}},ms);
+    });
+  },100);
+});
 </script>
 </body>
 </html>
