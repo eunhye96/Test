@@ -602,9 +602,8 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 
 // Init: start on list tab, then auto-switch to map
 renderAreaGrid();renderPlanner();renderList();
-window.addEventListener('load',function(){
+function autoSwitchToMap(){
   setTimeout(function(){
-    // Show map panel, build map
     document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
     document.getElementById('panel-map').classList.add('active');
     document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
@@ -613,7 +612,9 @@ window.addEventListener('load',function(){
     setTimeout(function(){if(theMap)theMap.invalidateSize()},300);
     setTimeout(function(){if(theMap)theMap.invalidateSize()},1000);
   },500);
-});
+}
+if(document.readyState==='complete'){autoSwitchToMap()}
+else{window.addEventListener('load',autoSwitchToMap)}
 </script>
 </body>
 </html>
