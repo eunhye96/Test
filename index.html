@@ -563,13 +563,18 @@ function openQuickAdd(name){
     html+='<div style="margin-bottom:.6rem"><div style="font-family:Gaegu,cursive;font-weight:700;color:var(--coral);margin-bottom:.3rem">'+day.day+'일차</div>';
     ['점심','저녁','간식','관광'].forEach(function(meal){
       var emoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':meal==='간식'?'🍡':'🏛️';
-      html+='<button onclick="doQuickAdd('+di+',\''+meal+'\')" style="margin:.15rem .2rem;padding:.3rem .7rem;border-radius:100px;border:1.5px solid var(--pink-light);background:var(--white);font-size:.82rem;cursor:pointer;transition:all .2s">'+emoji+' '+meal+'</button>';
+      var items=day.meals[meal]||[];
+      var already=items.indexOf(name)!==-1;
+      if(already){
+        html+='<button disabled style="margin:.15rem .2rem;padding:.3rem .7rem;border-radius:100px;border:1.5px solid var(--mint);background:var(--mint-light);font-size:.82rem;color:#2a6b4a">'+emoji+' '+meal+' ✅</button>';
+      }else{
+        html+='<button onclick="doQuickAdd('+di+',\''+meal+'\')" style="margin:.15rem .2rem;padding:.3rem .7rem;border-radius:100px;border:1.5px solid var(--pink-light);background:var(--white);font-size:.82rem;cursor:pointer;transition:all .2s">'+emoji+' '+meal+'</button>';
+      }
     });
     html+='</div>';
   });
-  var overlay=document.getElementById('quickAddModal');
   document.getElementById('quickAddContent').innerHTML=html;
-  overlay.classList.add('show');
+  document.getElementById('quickAddModal').classList.add('show');
 }
 function doQuickAdd(di,meal){
   if(!quickAddName)return;
