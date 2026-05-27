@@ -18,7 +18,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-20px) rotate(5deg)}}
 
 /* Hero */
-.hero{text-align:center;padding:3rem 1.5rem 2rem;background:linear-gradient(180deg,var(--pink-light) 0%,var(--cream) 100%)}
+.hero{text-align:center;padding:3rem 1.5rem 2rem;background:linear-gradient(180deg,var(--pink-light) 0%,var(--cream) 100%);position:relative;overflow:hidden}
 .hero-emoji{font-size:3.5rem;display:block;margin-bottom:.3rem;animation:bounce 2s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .hero h1{font-family:'Gaegu',cursive;font-size:2.6rem;font-weight:700;color:var(--brown);letter-spacing:-1px}
@@ -34,7 +34,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 
 /* ===== MAP PANEL ===== */
 .map-container{position:relative;max-width:960px;margin:1.5rem auto;padding:0 1rem}
-#realMap{width:100%;height:55vh;min-height:350px;max-height:500px;border-radius:20px;border:2px solid var(--pink-light);overflow:hidden;box-shadow:0 4px 20px var(--shadow);z-index:1;background:#e8e0d8}
+#realMap{width:100%;height:450px;border-radius:20px;border:2px solid var(--pink-light);overflow:hidden;box-shadow:0 4px 20px var(--shadow);z-index:1;background:#e8e0d8}
+@media(max-width:599px){#realMap{height:350px}}
 .leaflet-popup-content-wrapper{border-radius:12px!important;font-family:'Noto Sans KR',sans-serif!important;box-shadow:0 4px 15px rgba(0,0,0,.12)!important}
 .leaflet-popup-content{margin:10px 14px!important;font-size:.85rem;line-height:1.5}
 .map-popup-name{font-family:'Gaegu',cursive;font-size:1.15rem;font-weight:700;color:#8B6F5A;margin-bottom:2px}
@@ -148,11 +149,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
   <span class="hero-emoji">🗼</span>
   <h1>도쿄 <span>여행</span> 가이드</h1>
   <p class="hero-sub">우리의 먹방 쇼핑 미션 리스트 🍽️🛍️</p>
-  <div style="margin-top:.8rem;display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap">
-    <span style="background:var(--pink);color:#fff;padding:.3rem .8rem;border-radius:100px;font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700">🧡 챙</span>
-    <span style="background:var(--peach);color:#fff;padding:.3rem .8rem;border-radius:100px;font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700">💛 혜지</span>
-    <span style="background:var(--mint);color:#fff;padding:.3rem .8rem;border-radius:100px;font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700">💚 으네</span>
-  </div>
+  <p style="text-align:right;font-family:'Gaegu',cursive;font-size:.85rem;color:var(--brown-light);margin-top:.3rem;position:relative;z-index:1">created by eunhye ♡</p>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Gaegu',cursive;font-size:3.5rem;font-weight:700;color:var(--pink);opacity:.08;white-space:nowrap;pointer-events:none;z-index:0;letter-spacing:1rem">챙 으네 혜지</div>
 </div>
 
 <div class="main-tabs">
@@ -218,7 +216,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
   <div class="content" id="content"></div>
 </div>
 
-<div class="footer"><span class="footer-emoji">🍙🍡🍣</span>도쿄에서 맛있는 거 많이 먹자!<br><small style="font-size:.8rem;color:var(--text-light)">실시간 동기화 — 친구들과 함께! 🔄</small><br><small style="font-size:.7rem;color:var(--brown-light);margin-top:.5rem;display:inline-block">created by eunhye ♡</small></div>
+<div class="footer"><span class="footer-emoji">🍙🍡🍣</span>도쿄에서 맛있는 거 많이 먹자!<br><small style="font-size:.8rem;color:var(--text-light)">실시간 동기화 — 친구들과 함께! 🔄</small></div>
 
 <div class="sync-badge online" id="syncBadge">🟢 실시간 동기화 중</div>
 
@@ -646,18 +644,24 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
   });
 });
 
-// Init - delay map to ensure DOM is ready
+// Init
 renderPlanner();renderList();
-window.addEventListener('load',function(){
-  setTimeout(function(){
-    renderMap();
-    // Keep retrying invalidateSize to make sure tiles load
-    var retries=[500,1000,2000,3500];
-    retries.forEach(function(ms){
-      setTimeout(function(){if(map){map.invalidateSize();map.setView([35.6762,139.7350],12)}},ms);
-    });
-  },100);
-});
+
+// Aggressive map loading - poll until Leaflet is ready and container has size
+function tryInitMap(){
+  var container=document.getElementById('realMap');
+  if(typeof L==='undefined'||!container||container.offsetHeight<10){
+    container&&(container.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.2rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 로딩 중...</div>');
+    setTimeout(tryInitMap,500);
+    return;
+  }
+  renderMap();
+  // Keep hammering invalidateSize
+  var t=[300,600,1200,2000,3000,5000];
+  t.forEach(function(ms){setTimeout(function(){if(map){map.invalidateSize();map.setView([35.6762,139.7350],12)}},ms)});
+}
+if(document.readyState==='complete'){tryInitMap()}
+else{window.addEventListener('load',function(){setTimeout(tryInitMap,200)})};
 </script>
 </body>
 </html>
