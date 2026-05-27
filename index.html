@@ -626,19 +626,21 @@ document.getElementById('panel-map').classList.add('active');
 document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
 document.querySelector('[data-panel="map"]').classList.add('active');
 
-function initMap(){
-  buildMap();
-  setTimeout(function(){
-    if(theMap)theMap.invalidateSize();
-    // Fade out splash
-    setTimeout(function(){
-      document.getElementById('splash').classList.add('bye');
-      setTimeout(function(){document.getElementById('splash').style.display='none'},600);
-    },800);
-  },500);
-}
-if(document.readyState==='complete'){setTimeout(initMap,300)}
-else{window.addEventListener('load',function(){setTimeout(initMap,300)})}
+// Try to build map multiple times
+function tryBuild(){if(typeof L!=='undefined'&&!theMap){buildMap()}}
+
+// Splash ALWAYS disappears after 2.5 seconds no matter what
+setTimeout(function(){
+  document.getElementById('splash').classList.add('bye');
+  setTimeout(function(){document.getElementById('splash').style.display='none'},600);
+},2500);
+
+// Try building map at various times
+setTimeout(tryBuild,500);
+setTimeout(tryBuild,1000);
+setTimeout(tryBuild,2000);
+setTimeout(function(){tryBuild();if(theMap)theMap.invalidateSize()},2500);
+setTimeout(function(){if(theMap)theMap.invalidateSize()},3500);
 </script>
 </body>
 </html>
