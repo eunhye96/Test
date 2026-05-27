@@ -454,33 +454,8 @@ function buildMap(){
   if(typeof L==='undefined'||theMap)return;
   var el=document.getElementById('realMap');
   if(!el||el.offsetWidth<10)return;
-  theMap=L.map('realMap',{zoomControl:true,attributionControl:false}).setView([35.6762,139.735],12);
-  // Try multiple tile servers
-  var tileLoaded=false;
-  var tiles=[
-    'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
-  ];
-  var tileLayer=L.tileLayer(tiles[0],{maxZoom:19,subdomains:'abc'}).addTo(theMap);
-  tileLayer.on('tileerror',function(){
-    if(!tileLoaded){
-      tileLoaded=true;
-      theMap.removeLayer(tileLayer);
-      // Try next
-      for(var i=1;i<tiles.length;i++){
-        (function(url){
-          setTimeout(function(){
-            if(!tileLoaded){
-              tileLayer=L.tileLayer(url,{maxZoom:19,subdomains:'abcd'}).addTo(theMap);
-            }
-          },i*1000);
-        })(tiles[i]);
-      }
-    }
-  });
-  tileLayer.on('load',function(){tileLoaded=true});
+  theMap=L.map('realMap').setView([35.6762,139.735],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:19,subdomains:'abc'}).addTo(theMap);
   DATA.forEach(function(d){
     var ll=PLACE_LL[d.name];if(!ll)return;
     var col=AREA_COLORS[d.area]||'#999';
@@ -488,7 +463,7 @@ function buildMap(){
     var txt='<div style="font-family:Gaegu,cursive;font-size:1.1rem;font-weight:700;color:#8B6F5A">'+(d.star?'⭐ ':'')+d.name+'</div><div style="font-size:.75rem;color:#8B7B6F;margin:2px 0">'+d.cat+' · '+(areaEmojis[d.area]||'')+' '+d.area+'</div><div style="font-size:.78rem;color:#8B7B6F;background:#FFF8F0;padding:3px 6px;border-radius:6px;margin-top:4px">'+d.note+'</div>'+(d.rating?'<div style="font-size:.75rem;margin-top:3px">⭐ '+d.rating+'</div>':'');
     L.marker(ll,{icon:icon}).addTo(theMap).bindPopup(txt,{maxWidth:220});
   });
-  setTimeout(function(){theMap.invalidateSize()},200);
+  setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
 }
 
 function mapZoomArea(area){
@@ -639,15 +614,12 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 // Init
 renderAreaGrid();renderPlanner();renderList();
 
-// Map panel active
-document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-document.getElementById('panel-map').classList.add('active');
-document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-document.querySelector('[data-panel="map"]').classList.add('active');
-
-// Build map immediately - Leaflet is loaded from local file
-buildMap();
-setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
+// Build map on window load - exactly like debug page that worked
+window.onload=function(){
+  buildMap();
+  setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
+  setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
+};
 </script>
 </body>
 </html>
