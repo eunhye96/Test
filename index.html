@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🗼 도쿄 여행 가이드 🍡</title>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
@@ -33,22 +31,18 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .panel{display:none}.panel.active{display:block}
 
 /* ===== MAP PANEL ===== */
-.map-container{position:relative;max-width:960px;margin:1.5rem auto;padding:0 1rem}
-#realMap{width:100%;height:450px;border-radius:20px;border:2px solid var(--pink-light);overflow:hidden;box-shadow:0 4px 20px var(--shadow);z-index:1;background:#e8e0d8}
-@media(max-width:599px){#realMap{height:350px}}
-.leaflet-popup-content-wrapper{border-radius:12px!important;font-family:'Noto Sans KR',sans-serif!important;box-shadow:0 4px 15px rgba(0,0,0,.12)!important}
-.leaflet-popup-content{margin:10px 14px!important;font-size:.85rem;line-height:1.5}
-.map-popup-name{font-family:'Gaegu',cursive;font-size:1.15rem;font-weight:700;color:#8B6F5A;margin-bottom:2px}
-.map-popup-cat{display:inline-block;font-size:.68rem;padding:1px 7px;border-radius:100px;margin-bottom:4px}
-.map-popup-note{font-size:.78rem;color:#8B7B6F}
-.map-popup-btn{display:inline-block;margin-top:6px;font-family:'Gaegu',cursive;font-size:.85rem;font-weight:700;padding:3px 12px;border-radius:100px;background:#FF8C7C;color:#fff;cursor:pointer;border:none;transition:all .2s}
-.map-popup-btn:hover{background:#E85D4A}
-.custom-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);font-size:11px;color:#fff;font-weight:700;cursor:pointer;transition:transform .2s}
-.custom-marker:hover{transform:scale(1.2)}
-.map-legend{position:absolute;bottom:1.5rem;left:1.5rem;z-index:400;background:rgba(255,248,240,.95);backdrop-filter:blur(8px);border-radius:14px;padding:.7rem 1rem;border:2px solid var(--pink-light);box-shadow:0 2px 12px var(--shadow);display:flex;flex-wrap:wrap;gap:.4rem .8rem;max-width:calc(100% - 3rem);font-size:.75rem}
-.map-legend-item{display:flex;align-items:center;gap:.3rem;cursor:pointer;opacity:1;transition:opacity .2s}
-.map-legend-item:hover{opacity:.7}
-.map-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.map-container{max-width:960px;margin:1.5rem auto;padding:0 1rem}
+.map-area-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem}
+@media(max-width:599px){.map-area-grid{grid-template-columns:repeat(2,1fr)}}
+.map-area-card{background:var(--white);border-radius:14px;padding:.8rem;text-align:center;cursor:pointer;border:2px solid var(--pink-light);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.map-area-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px var(--shadow)}
+.map-area-card .area-emoji{font-size:1.8rem;display:block}
+.map-area-card .area-name{font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700;color:var(--brown);margin-top:.2rem}
+.map-area-card .area-count{font-size:.75rem;color:var(--text-light)}
+.map-area-card .area-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.3rem}
+.map-iframe-wrap{border-radius:20px;overflow:hidden;border:2px solid var(--pink-light);box-shadow:0 4px 20px var(--shadow);margin-top:1rem}
+.map-iframe-wrap iframe{width:100%;height:400px;border:none;display:block}
+@media(max-width:599px){.map-iframe-wrap iframe{height:300px}}
 
 /* ===== PLANNER PANEL ===== */
 .planner-wrap{max-width:900px;margin:1.5rem auto;padding:0 1rem}
@@ -166,7 +160,11 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 <!-- MAP PANEL -->
 <div class="panel active" id="panel-map">
   <div class="map-container">
-    <div id="realMap"></div>
+    <div class="map-iframe-wrap">
+      <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1vK9R_xkdC9pJ0tQjHb7uFe2YJlCJmXo&ehbc=2E312F&noprof=1&ll=35.6762,139.735&z=12" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" id="gmapFrame"></iframe>
+    </div>
+    <div style="text-align:center;margin:.8rem 0;font-family:'Gaegu',cursive;color:var(--brown-light);font-size:.9rem">👇 지역을 탭하면 리스트로 이동!</div>
+    <div class="map-area-grid" id="areaGrid"></div>
   </div>
 </div>
 
@@ -400,123 +398,32 @@ function updateSyncBadge(state){
 // Auto-init
 initFirebase();
 
-// ===== REAL MAP (Leaflet) =====
-const PLACE_LATLNG={
-  "이치란라멘":[35.6906,139.7028],"미락정":[35.6957,139.7044],"타츠노야":[35.6961,139.6984],"돈돈":[35.6943,139.7011],
-  "타츠키치":[35.6912,139.7053],"일리야 (Cafe Aaliya)":[35.6905,139.7048],"이세탄백화점":[35.6916,139.7047],
-  "오이와케당고":[35.6905,139.7054],"노보리테이":[35.6900,139.7040],"이치란 가부키초점":[35.6940,139.7035],
-  "규카츠 모토무라":[35.6888,139.6998],"소의마력 야끼니꾸":[35.6947,139.7032],"니쿠토타마고":[35.6930,139.7010],
-  "스시 니혼카이":[35.6920,139.6965],"팡메종 신주쿠":[35.6895,139.7020],"호르몬 후타고":[35.6955,139.7050],
-  "Ko Sushi":[35.6935,139.7045],"몽벨":[35.6880,139.6995],
-  "후쿠미미":[35.6596,139.6977],"상등카레":[35.6571,139.7038],"호루이치":[35.6576,139.7049],
-  "루크스랍스타":[35.6635,139.6995],"논베이요코초":[35.6600,139.7015],"모리모토":[35.6586,139.6987],
-  "모헤지":[35.6583,139.7022],"야마모토노함바그":[35.6576,139.7048],"겐카츠":[35.6591,139.6993],
-  "히키니쿠토코메":[35.6593,139.6976],"토리타케":[35.6580,139.6990],"스시도쿄텐":[35.6571,139.7033],
-  "야스베에":[35.6572,139.7038],"피자슬라이스":[35.6535,139.7051],"가츠동야즈이초":[35.6627,139.6954],
-  "쿠우야":[35.6560,139.7040],"고향야잇신":[35.6575,139.7030],"돈카츠 마이센":[35.6590,139.7010],
-  "야키니쿠 코코카라":[35.6588,139.6965],"후쿠미미 시부야점":[35.6598,139.6980],
-  "시로향수 SHIRO":[35.6658,139.7094],"넘버슈가":[35.6665,139.7062],"Sanaka 스시":[35.6665,139.7058],
-  "랄프즈카페":[35.6679,139.7073],"와라타코":[35.6690,139.7080],
-  "아후리라멘":[35.6730,139.7038],"레드락":[35.6714,139.7078],"로스트비프오노":[35.6690,139.7063],
-  "마리온크레페":[35.6713,139.7049],
-  "Yakiyaki Miwa":[35.6491,139.7084],"에비스노야스베":[35.6456,139.7147],
-  "이마카츠":[35.6645,139.7316],"죠몬":[35.6614,139.7330],"곤파치니시아자부":[35.6602,139.7236],
-  "인디언카레":[35.6787,139.7650],"타마토야":[35.6826,139.7681],"키와미야함바그":[35.6823,139.7680],
-  "히츠마부시 빈쵸":[35.6744,139.7654],"로쿠린샤":[35.6801,139.7678],"야바톤":[35.6726,139.7693],
-  "우나후지":[35.6703,139.7590],"츠지한":[35.6807,139.7716],"카가리라멘":[35.6712,139.7613],
-  "Zakuro":[35.6717,139.7662],"미도리스시":[35.6704,139.7597],"이마카츠 긴자점":[35.6700,139.7620],
-  "후쿠미미 긴자점":[35.6710,139.7640],
-  "녹는햄버그 후쿠요시":[35.7010,139.7920],"이모야킨지로":[35.7120,139.7960],
-  "센소지":[35.7148,139.7967],"아사쿠사 규카츠":[35.7100,139.7950],"조우몬 꼬치":[35.7080,139.7930],
-  "KURAMAE CANNELE":[35.6980,139.7890],"츠지한 카구라자카":[35.7020,139.7410],"스시에이":[35.6950,139.7850],
-  "팡메종":[35.6716,139.7705],"기무라야":[35.6717,139.7653],"터렛커피":[35.6680,139.7720],
-  "푸글렌":[35.6666,139.6924],"나타데크리스티아노":[35.6665,139.6926],"neel카페":[35.6737,139.7107],
-  "카멜백":[35.6656,139.6922],
-  "나리타공항":[35.7720,140.3929],"우에노공원":[35.7146,139.7732],"아카바네바시역":[35.6565,139.7455],
-  "호텔 선라이트":[35.6900,139.6985],"B-shop":[35.6910,139.7000],"빔스":[35.6915,139.7005]
-};
-const AREA_COLORS={"신주쿠":"#E85D4A","시부야":"#D84B94","오모테산도":"#2EAD6D","하라주쿠":"#8B5CF6","에비스":"#E8943A","롯폰기":"#3B82F6","긴자":"#D4960A","아사쿠사":"#DC4E4E","카페":"#C06090","기타":"#777"};
-
-let map=null, markers=[], markerLayer=null, mapInited=false, legendAdded=false;
+// ===== MAP =====
+var AREA_COLORS={"신주쿠":"#E85D4A","시부야":"#D84B94","오모테산도":"#2EAD6D","하라주쿠":"#8B5CF6","에비스":"#E8943A","롯폰기":"#3B82F6","긴자":"#D4960A","아사쿠사":"#DC4E4E","카페":"#C06090","기타":"#777"};
 
 function renderMap(){
-  const container=document.getElementById('realMap');
-  if(!container)return;
-  
-  // If Leaflet not loaded yet, show fallback
-  if(typeof L==='undefined'){
-    container.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.2rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 로딩 중...<br><small style="font-size:.85rem;color:#A68B7B">인터넷 연결을 확인해주세요</small></div>';
-    setTimeout(renderMap,1000);
-    return;
-  }
-
-  if(map){map.remove();map=null;mapInited=false}
-  
-  // Remove old legend
-  const oldLegend=document.querySelector('.map-legend');
-  if(oldLegend)oldLegend.remove();
-
-  map=L.map('realMap',{zoomControl:false,tap:true,touchZoom:true}).setView([35.6762,139.7350],12);
-  L.control.zoom({position:'topright'}).addTo(map);
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OSM &copy; CARTO',maxZoom:19,subdomains:'abcd'
-  }).addTo(map);
-
-  markerLayer=L.layerGroup().addTo(map);
-  markers=[];
-
-  DATA.forEach(d=>{
-    const ll=PLACE_LATLNG[d.name];
-    if(!ll)return;
-    const col=AREA_COLORS[d.area]||'#999';
-    const icon=L.divIcon({
-      className:'',
-      html:'<div class="custom-marker" style="width:26px;height:26px;background:'+col+'">'+(d.star?'★':'')+'</div>',
-      iconSize:[26,26],iconAnchor:[13,13]
-    });
-    const popup='<div class="map-popup-name">'+(d.star?'⭐ ':'')+d.name+'</div>'
-      +'<span class="map-popup-cat card-tag '+d.tag+'">'+d.cat+'</span> <span style="font-size:.72rem;color:#8B7B6F">'+(areaEmojis[d.area]||'')+' '+d.area+'</span>'
-      +'<div class="map-popup-note">'+d.note+'</div>'
-      +(d.rating?'<span style="font-size:.75rem">⭐ '+d.rating+'</span>':'')
-      +'<br><button class="map-popup-btn" onclick="mapGoToList(\''+d.area.replace(/'/g,"\\'")+'\')">📋 리스트에서 보기</button>';
-    const m=L.marker(ll,{icon}).bindPopup(popup,{maxWidth:250});
-    m._area=d.area;
-    markers.push(m);
-    markerLayer.addLayer(m);
+  var grid=document.getElementById('areaGrid');
+  if(!grid)return;
+  var html='';
+  areaOrder.forEach(function(a){
+    var cnt=DATA.filter(function(d){return d.area===a}).length;
+    var col=AREA_COLORS[a]||'#999';
+    html+='<div class="map-area-card" onclick="mapGoToList(\''+a+'\')" style="border-color:'+col+'22">'
+      +'<span class="area-emoji">'+areaEmojis[a]+'</span>'
+      +'<div class="area-name"><span class="area-dot" style="background:'+col+'"></span>'+(a==="긴자"?"긴자·도쿄역":a==="기타"?"관광·쇼핑":a)+'</div>'
+      +'<div class="area-count">'+cnt+'곳</div>'
+      +'</div>';
   });
-
-  // Legend
-  const legendDiv=document.createElement('div');
-  legendDiv.className='map-legend';
-  areaOrder.filter(a=>a!=='기타').forEach(a=>{
-    const col=AREA_COLORS[a];
-    const cnt=DATA.filter(d=>d.area===a).length;
-    legendDiv.innerHTML+='<div class="map-legend-item" onclick="mapZoomArea(\''+a+'\')"><div class="map-legend-dot" style="background:'+col+'"></div><span>'+(areaEmojis[a]||'')+' '+a+' ('+cnt+')</span></div>';
-  });
-  document.querySelector('.map-container').appendChild(legendDiv);
-  
-  mapInited=true;
-  // Force correct size after a tick
-  setTimeout(function(){if(map)map.invalidateSize()},200);
-  setTimeout(function(){if(map)map.invalidateSize()},600);
-}
-
-function mapZoomArea(area){
-  const pts=markers.filter(m=>m._area===area).map(m=>[m.getLatLng().lat,m.getLatLng().lng]);
-  if(pts.length){
-    const bounds=L.latLngBounds(pts);
-    map.fitBounds(bounds.pad(0.3),{maxZoom:15});
-  }
+  grid.innerHTML=html;
 }
 
 function mapGoToList(area){
-  document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
   document.querySelector('[data-panel="list"]').classList.add('active');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.getElementById('panel-list').classList.add('active');
   activeArea=area;
-  document.querySelectorAll('.nav-pill').forEach(p=>{p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});
+  document.querySelectorAll('.nav-pill').forEach(function(p){p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});
   renderList();
   document.getElementById('panel-list').scrollIntoView({behavior:'smooth'});
 }
@@ -641,33 +548,11 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
     document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
-    if(tab.dataset.panel==='map'){
-      if(!mapInited){setTimeout(renderMap,100)}
-      else if(map){setTimeout(function(){map.invalidateSize()},150)}
-    }
   });
 });
 
 // Init
-renderPlanner();renderList();
-
-// Map fix: 로딩 후 리스트탭 갔다가 지도탭으로 돌아오기
-function tryInitMap(){
-  if(typeof L==='undefined'){setTimeout(tryInitMap,500);return}
-  // 리스트 탭으로 전환
-  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-  document.getElementById('panel-list').classList.add('active');
-  setTimeout(function(){
-    // 지도 탭으로 복귀
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-    document.getElementById('panel-map').classList.add('active');
-    document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-    document.querySelector('[data-panel="map"]').classList.add('active');
-    setTimeout(function(){renderMap()},100);
-  },50);
-}
-if(document.readyState==='complete'){tryInitMap()}
-else{window.addEventListener('load',function(){setTimeout(tryInitMap,300)});};
+renderMap();renderPlanner();renderList();
 </script>
 </body>
 </html>
