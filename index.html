@@ -647,21 +647,23 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 // Init
 renderPlanner();renderList();
 
-// Aggressive map loading - poll until Leaflet is ready and container has size
+// Map fix: 로딩 후 리스트탭 갔다가 지도탭으로 돌아오기
 function tryInitMap(){
-  var container=document.getElementById('realMap');
-  if(typeof L==='undefined'||!container||container.offsetHeight<10){
-    container&&(container.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gaegu,cursive;font-size:1.2rem;color:#8B6F5A;text-align:center;padding:2rem">🗺️ 지도 로딩 중...</div>');
-    setTimeout(tryInitMap,500);
-    return;
-  }
-  renderMap();
-  // Keep hammering invalidateSize
-  var t=[300,600,1200,2000,3000,5000];
-  t.forEach(function(ms){setTimeout(function(){if(map){map.invalidateSize();map.setView([35.6762,139.7350],12)}},ms)});
+  if(typeof L==='undefined'){setTimeout(tryInitMap,500);return}
+  // 리스트 탭으로 전환
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+  document.getElementById('panel-list').classList.add('active');
+  setTimeout(function(){
+    // 지도 탭으로 복귀
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+    document.getElementById('panel-map').classList.add('active');
+    document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelector('[data-panel="map"]').classList.add('active');
+    setTimeout(function(){renderMap()},100);
+  },50);
 }
 if(document.readyState==='complete'){tryInitMap()}
-else{window.addEventListener('load',function(){setTimeout(tryInitMap,200)})};
+else{window.addEventListener('load',function(){setTimeout(tryInitMap,300)});};
 </script>
 </body>
 </html>
