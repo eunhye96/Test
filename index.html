@@ -617,27 +617,37 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
   });
 });
 
-// Init: splash screen covers while map loads behind
+// Init
 renderAreaGrid();renderPlanner();renderList();
 
-// Start with map panel active (hidden behind splash)
+// Start on list panel (map hidden behind splash)
 document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-document.getElementById('panel-map').classList.add('active');
-document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-document.querySelector('[data-panel="map"]').classList.add('active');
+document.getElementById('panel-list').classList.add('active');
 
-// Try to build map multiple times
-function tryBuild(){if(typeof L!=='undefined'&&!theMap){buildMap()}}
-
-// Poll: build map when Leaflet ready, then keep invalidating until tiles show
+// Poll for Leaflet, then do the tab-switch trick behind splash
 var mapPoll=setInterval(function(){
   if(typeof L!=='undefined'&&L.map){
-    if(!theMap){buildMap()}
-    if(theMap){theMap.invalidateSize()}
+    clearInterval(mapPoll);
+    // 1. Switch to map, build it
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+    document.getElementById('panel-map').classList.add('active');
+    if(!theMap)buildMap();
+    if(theMap)theMap.invalidateSize();
+    // 2. Switch to list
+    setTimeout(function(){
+      document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+      document.getElementById('panel-list').classList.add('active');
+      // 3. Switch back to map - this is what makes tiles render!
+      setTimeout(function(){
+        document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+        document.getElementById('panel-map').classList.add('active');
+        document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
+        document.querySelector('[data-panel="map"]').classList.add('active');
+        if(theMap)theMap.invalidateSize();
+      },150);
+    },150);
   }
 },500);
-// Stop polling after 15 seconds
-setTimeout(function(){clearInterval(mapPoll)},15000);
 </script>
 </body>
 </html>
