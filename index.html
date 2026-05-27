@@ -629,13 +629,15 @@ document.querySelector('[data-panel="map"]').classList.add('active');
 // Try to build map multiple times
 function tryBuild(){if(typeof L!=='undefined'&&!theMap){buildMap()}}
 
-// Try building map - poll every 500ms until Leaflet is ready
+// Poll: build map when Leaflet ready, then keep invalidating until tiles show
 var mapPoll=setInterval(function(){
-  if(typeof L!=='undefined'&&L.map&&!theMap){
-    buildMap();
-    if(theMap){theMap.invalidateSize();clearInterval(mapPoll)}
+  if(typeof L!=='undefined'&&L.map){
+    if(!theMap){buildMap()}
+    if(theMap){theMap.invalidateSize()}
   }
 },500);
+// Stop polling after 15 seconds
+setTimeout(function(){clearInterval(mapPoll)},15000);
 </script>
 </body>
 </html>
