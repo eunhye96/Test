@@ -388,7 +388,14 @@ function initFirebase(){
 
     db.ref('planner').on('value',snap=>{
       planner=snap.val()||JSON.parse(JSON.stringify(defaultPlanner));
-      planner.forEach(d=>{if(!d.meals)d.meals={점심:[],저녁:[],간식:[]}});
+      planner.forEach(function(d){
+        if(!d.meals)d.meals={};
+        if(!d.meals['점심'])d.meals['점심']=[];
+        if(!d.meals['저녁'])d.meals['저녁']=[];
+        if(!d.meals['간식'])d.meals['간식']=[];
+        if(!d.meals['관광'])d.meals['관광']=[];
+        if(!d.meals['메모'])d.meals['메모']=[];
+      });
       renderPlanner();
     });
 
@@ -402,6 +409,7 @@ function initFirebase(){
     updateSyncBadge('offline');
     visited=JSON.parse(localStorage.getItem('tokyoVisited')||'{}');
     planner=JSON.parse(localStorage.getItem('tokyoPlanner')||'null')||JSON.parse(JSON.stringify(defaultPlanner));
+    planner.forEach(function(d){if(!d.meals)d.meals={};if(!d.meals['점심'])d.meals['점심']=[];if(!d.meals['저녁'])d.meals['저녁']=[];if(!d.meals['간식'])d.meals['간식']=[];if(!d.meals['관광'])d.meals['관광']=[];if(!d.meals['메모'])d.meals['메모']=[];});
     renderPlanner();renderList();
   }
 }
@@ -520,6 +528,7 @@ function mapGoToList(area){document.querySelectorAll('.main-tab').forEach(functi
 
 // ===== PLANNER =====
 function renderPlanner(){
+  if(!planner||!planner.length)return;
   let html='';
   planner.forEach((day,di)=>{
     html+=`<div class="day-block"><div class="day-title">🗓️ ${day.day}일차
