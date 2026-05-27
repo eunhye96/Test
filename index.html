@@ -453,7 +453,7 @@ var theMap=null;
 function buildMap(){
   if(typeof L==='undefined'||theMap)return;
   var el=document.getElementById('realMap');
-  if(!el||el.offsetWidth<10)return;
+  if(!el)return;
   theMap=L.map('realMap').setView([35.6762,139.735],12);
   L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:19,subdomains:'abc'}).addTo(theMap);
   DATA.forEach(function(d){
@@ -614,12 +614,14 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 // Init
 renderAreaGrid();renderPlanner();renderList();
 
-// Build map on window load - exactly like debug page that worked
-window.onload=function(){
+// Build map RIGHT NOW - no waiting
+try{
   buildMap();
-  setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
-  setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
-};
+}catch(e){
+  document.getElementById('realMap').innerHTML='<div style="padding:20px;color:red;font-size:14px">Map error: '+e.message+'</div>';
+}
+setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
+setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
 </script>
 </body>
 </html>
