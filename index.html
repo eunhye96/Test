@@ -67,6 +67,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 @keyframes chipIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
 .meal-chip .chip-remove{cursor:pointer;font-size:.7rem;color:var(--text-light);margin-left:.1rem;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .meal-chip .chip-remove:hover{background:var(--coral);color:var(--white)}
+.meal-chip .chip-map{cursor:pointer;font-size:.65rem;margin-left:.15rem;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.meal-chip .chip-map:hover{background:var(--sky);transform:scale(1.2)}
 .meal-empty{font-size:.82rem;color:var(--text-light);font-style:italic}
 .add-to-meal-btn{font-size:.65rem;padding:.2rem .5rem;border-radius:100px;border:1.5px solid var(--mint);background:var(--mint-light);color:#408060;cursor:pointer;font-weight:500;transition:all .2s;white-space:nowrap}
 .add-to-meal-btn:hover{background:var(--mint);color:var(--white)}
@@ -518,7 +520,9 @@ function renderPlanner(){
       html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot">`;
       if(items.length===0) html+=`<span class="meal-empty">탭해서 추가...</span>`;
       items.forEach((name,ci)=>{
-        html+=`<span class="meal-chip">${name}<span class="chip-remove" onclick="event.stopPropagation();removeMeal(${di},'${meal}',${ci})">✕</span></span>`;
+        var did=DATA.find(function(d){return d.name===name});
+        var mapBtn=(did&&PLACE_LL[name])?'<span class="chip-map" onclick="event.stopPropagation();flyToPlace('+did.id+')">📍</span>':'';
+        html+=`<span class="meal-chip">${name}${mapBtn}<span class="chip-remove" onclick="event.stopPropagation();removeMeal(${di},'${meal}',${ci})">✕</span></span>`;
       });
       html+=`</div><button class="add-to-meal-btn" onclick="event.stopPropagation();openModal(${di},'${meal}')">+ 추가</button></div>`;
     });
