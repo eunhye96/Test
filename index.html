@@ -208,8 +208,6 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
       <button class="nav-pill" data-area="롯폰기">🌙 롯폰기</button>
       <button class="nav-pill" data-area="긴자">💎 긴자·도쿄역</button>
       <button class="nav-pill" data-area="아사쿠사">⛩️ 아사쿠사</button>
-      <button class="nav-pill" data-area="카페">☕ 카페</button>
-      <button class="nav-pill" data-area="기타">📍 관광·쇼핑</button>
     </div>
   </div>
   <div class="filter-wrap" id="filterWrap">
@@ -223,6 +221,8 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
     <button class="filter-pill" data-filter="몬자야끼">🥞 몬자</button>
     <button class="filter-pill" data-filter="함바그">🍔 함바그</button>
     <button class="filter-pill" data-filter="카페">☕ 카페</button>
+    <button class="filter-pill" data-filter="관광">🏛️ 관광</button>
+    <button class="filter-pill" data-filter="쇼핑">🛍️ 쇼핑</button>
   </div>
   <div class="progress-wrap">
     <div class="progress-label" id="progressLabel">방문 체크: 0 / 0곳</div>
@@ -319,23 +319,24 @@ const DATA=[
   {name:"KURAMAE CANNELE",area:"아사쿠사",cat:"카페",tag:"tag-cafe",note:"까눌레, 도쿄의연남동🥰",rating:"4.3"},
   {name:"츠지한 카구라자카",area:"아사쿠사",cat:"회덮밥",tag:"tag-sushi",note:"해산물덮밥",rating:"4.4"},
   {name:"스시에이",area:"아사쿠사",cat:"스시",tag:"tag-sushi",note:"가성비 ★4.8!",rating:"4.8",badges:["추천"]},
-  {name:"팡메종",area:"카페",cat:"베이커리",tag:"tag-cafe",note:"소금빵 원조! 화요 휴무",rating:"4.4",badges:["인기"]},
-  {name:"기무라야",area:"카페",cat:"베이커리",tag:"tag-cafe",note:"1874년 앙팡 원조",rating:"4.2"},
-  {name:"터렛커피",area:"카페",cat:"카페",tag:"tag-cafe",note:"미슐랭, 치즈케이크, 수요 휴무",rating:"4.6",badges:["추천"]},
-  {name:"푸글렌",area:"카페",cat:"카페",tag:"tag-cafe",note:"노르웨이커피, 저녁=칵테일바",rating:"4.3"},
-  {name:"나타데크리스티아노",area:"카페",cat:"카페",tag:"tag-cafe",note:"에그타르트, 일찍가기",rating:""},
-  {name:"neel카페",area:"카페",cat:"카페",tag:"tag-cafe",note:"가츠산도, 크레페",rating:"4.1"},
-  {name:"카멜백",area:"카페",cat:"카페",tag:"tag-cafe",note:"타마고샌드+커피 세트",rating:"3.9"},
-  {name:"나리타공항",area:"기타",cat:"기타",tag:"tag-other",note:"도착/출발",rating:"4.3"},
-  {name:"우에노공원",area:"기타",cat:"기타",tag:"tag-other",note:"벚꽃, 산책",rating:"4.4"},
-  {name:"아카바네바시역",area:"기타",cat:"기타",tag:"tag-other",note:"도쿄타워 포토스팟!",rating:"3.8"},
-  {name:"호텔 선라이트",area:"기타",cat:"기타",tag:"tag-other",note:"숙소",rating:"3.7"},
-  {name:"B-shop",area:"기타",cat:"기타",tag:"tag-other",note:"의류점",rating:"4.3"},
-  {name:"빔스",area:"기타",cat:"기타",tag:"tag-other",note:"의류점",rating:"4.2"},
+  {name:"팡메종",area:"긴자",cat:"베이커리",tag:"tag-cafe",note:"소금빵 원조! 화요 휴무",rating:"4.4",badges:["인기"]},
+  {name:"기무라야",area:"긴자",cat:"베이커리",tag:"tag-cafe",note:"1874년 앙팡 원조",rating:"4.2"},
+  {name:"터렛커피",area:"긴자",cat:"카페",tag:"tag-cafe",note:"미슐랭, 치즈케이크, 수요 휴무",rating:"4.6",badges:["추천"]},
+  {name:"푸글렌",area:"시부야",cat:"카페",tag:"tag-cafe",note:"노르웨이커피, 저녁=칵테일바",rating:"4.3"},
+  {name:"나타데크리스티아노",area:"시부야",cat:"카페",tag:"tag-cafe",note:"에그타르트, 일찍가기",rating:""},
+  {name:"neel카페",area:"하라주쿠",cat:"카페",tag:"tag-cafe",note:"가츠산도, 크레페",rating:"4.1"},
+  {name:"카멜백",area:"시부야",cat:"카페",tag:"tag-cafe",note:"타마고샌드+커피 세트",rating:"3.9"},
+  {name:"나리타공항",area:"기타",cat:"관광",tag:"tag-other",note:"도착/출발",rating:"4.3"},
+  {name:"우에노공원",area:"아사쿠사",cat:"관광",tag:"tag-other",note:"벚꽃, 산책",rating:"4.4"},
+  {name:"아카바네바시역",area:"롯폰기",cat:"관광",tag:"tag-other",note:"도쿄타워 포토스팟!",rating:"3.8"},
+  {name:"호텔 선라이트",area:"신주쿠",cat:"기타",tag:"tag-other",note:"숙소",rating:"3.7"},
+  {name:"B-shop",area:"신주쿠",cat:"쇼핑",tag:"tag-other",note:"의류점",rating:"4.3"},
+  {name:"빔스",area:"신주쿠",cat:"쇼핑",tag:"tag-other",note:"의류점",rating:"4.2"},
+  {name:"메이지진구",area:"하라주쿠",cat:"관광",tag:"tag-other",note:"하라주쿠 필수 신사, 도리이 포토스팟",rating:"4.6"},
 ];
 
-const areaEmojis={"신주쿠":"🏙️","시부야":"🎯","오모테산도":"🌿","하라주쿠":"🌈","에비스":"🚃","롯폰기":"🌙","긴자":"💎","아사쿠사":"⛩️","카페":"☕","기타":"📍"};
-const areaOrder=["신주쿠","시부야","오모테산도","하라주쿠","에비스","롯폰기","긴자","아사쿠사","카페","기타"];
+const areaEmojis={"신주쿠":"🏙️","시부야":"🎯","오모테산도":"🌿","하라주쿠":"🌈","에비스":"🚃","롯폰기":"🌙","긴자":"💎","아사쿠사":"⛩️","기타":"📍"};
+const areaOrder=["신주쿠","시부야","오모테산도","하라주쿠","에비스","롯폰기","긴자","아사쿠사","기타"];
 
 // give each item an id
 DATA.forEach((d,i)=>d.id=i);
@@ -445,6 +446,7 @@ var PLACE_LL={
   "팡메종":[35.6716,139.7705],"기무라야":[35.6717,139.7653],"터렛커피":[35.6680,139.7720],
   "푸글렌":[35.6666,139.6924],"나타데크리스티아노":[35.6665,139.6926],"neel카페":[35.6737,139.7107],
   "카멜백":[35.6656,139.6922],
+  "메이지진구":[35.6764,139.6993],
   "우에노공원":[35.7146,139.7732],"아카바네바시역":[35.6565,139.7455]
 };
 
@@ -587,6 +589,8 @@ function renderList(){
         if(activeFilter==="스시")return d.cat==="스시"||d.cat==="오마카세"||d.cat==="회덮밥";
         if(activeFilter==="함바그")return d.cat==="함바그"||d.cat==="떡갈비";
         if(activeFilter==="카페")return d.cat==="카페"||d.cat==="베이커리"||d.cat==="디저트";
+        if(activeFilter==="관광")return d.cat==="관광";
+        if(activeFilter==="쇼핑")return d.cat==="쇼핑";
         return d.cat===activeFilter;
       });
     }
