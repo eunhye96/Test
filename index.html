@@ -614,11 +614,20 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 // Init
 renderAreaGrid();renderPlanner();renderList();
 
-// Build map RIGHT NOW - no waiting
-try{
-  buildMap();
-}catch(e){
-  document.getElementById('realMap').innerHTML='<div style="padding:20px;color:red;font-size:14px">Map error: '+e.message+'</div>';
+// Debug: show what's happening in the map div
+var dbg=document.getElementById('realMap');
+dbg.innerHTML='<div style="padding:10px;font-size:12px;font-family:monospace;color:#333">';
+dbg.innerHTML+='L exists: '+(typeof L!=='undefined')+'<br>';
+dbg.innerHTML+='L.map exists: '+(typeof L!=='undefined'&&typeof L.map)+'<br>';
+if(typeof L!=='undefined'){
+  try{
+    buildMap();
+    dbg.innerHTML='';
+  }catch(e){
+    dbg.innerHTML+='buildMap error: '+e.message+'<br>';
+  }
+}else{
+  dbg.innerHTML+='Leaflet NOT loaded!<br>';
 }
 setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
 setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
