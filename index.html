@@ -131,7 +131,18 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .footer{text-align:center;padding:2.5rem 1.5rem;font-family:'Gaegu',cursive;color:var(--brown-light);font-size:1rem}
 .footer-emoji{font-size:2rem;display:block;margin-bottom:.4rem}
 
-/* Sync status */
+/* Splash screen */
+.splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(180deg,var(--pink-light),var(--cream));display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease}
+.splash.bye{opacity:0;pointer-events:none}
+.splash-plane{font-size:3rem;animation:fly 2s ease-in-out infinite}
+@keyframes fly{0%,100%{transform:translate(0,0) rotate(0deg)}50%{transform:translate(10px,-15px) rotate(-5deg)}}
+.splash-text{font-family:'Gaegu',cursive;font-size:1.8rem;font-weight:700;color:var(--brown);margin-top:1rem}
+.splash-sub{font-family:'Gaegu',cursive;font-size:1rem;color:var(--brown-light);margin-top:.3rem}
+.splash-dots{margin-top:.8rem;display:flex;gap:.4rem}
+.splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--pink);animation:dotBounce 1.2s ease-in-out infinite}
+.splash-dots span:nth-child(2){animation-delay:.2s}
+.splash-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-8px);opacity:1}}
 .sync-badge{position:fixed;bottom:1rem;right:1rem;z-index:300;padding:.4rem .8rem;border-radius:100px;font-family:'Gaegu',cursive;font-size:.85rem;font-weight:700;box-shadow:0 2px 12px var(--shadow);display:flex;align-items:center;gap:.3rem;transition:all .3s}
 .sync-badge.online{background:var(--mint);color:#2a6b4a}.sync-badge.offline{background:var(--yellow);color:#8B7020}
 
@@ -141,6 +152,12 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 </style>
 </head>
 <body>
+<div class="splash" id="splash">
+  <span class="splash-plane">✈️</span>
+  <div class="splash-text">도쿄로 떠나는 중...</div>
+  <div class="splash-sub">챙 · 혜지 · 으네의 맛집 여행 🍣</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
 <div class="float-deco">🍣</div><div class="float-deco">🍡</div><div class="float-deco">🍜</div><div class="float-deco">🍙</div><div class="float-deco">🍰</div>
 
 <div class="hero">
@@ -156,13 +173,13 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 </div>
 
 <div class="main-tabs">
-  <button class="main-tab" data-panel="map">🗺️ 지도</button>
+  <button class="main-tab active" data-panel="map">🗺️ 지도</button>
   <button class="main-tab" data-panel="planner">📅 일정</button>
-  <button class="main-tab active" data-panel="list">📋 리스트</button>
+  <button class="main-tab" data-panel="list">📋 리스트</button>
 </div>
 
 <!-- MAP PANEL -->
-<div class="panel" id="panel-map">
+<div class="panel active" id="panel-map">
   <div class="map-container">
     <div id="realMap"></div>
     <div style="text-align:center;margin:.8rem 0;font-family:'Gaegu',cursive;color:var(--brown-light);font-size:.9rem">👇 지역을 탭하면 리스트로 이동!</div>
@@ -185,7 +202,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 </div>
 
 <!-- LIST PANEL -->
-<div class="panel active" id="panel-list">
+<div class="panel" id="panel-list">
   <div class="nav-wrap">
     <div class="nav-pills" id="navPills">
       <button class="nav-pill active" data-area="all">🗾 전체</button>
@@ -600,21 +617,28 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
   });
 });
 
-// Init: start on list tab, then auto-switch to map
+// Init: splash screen covers while map loads behind
 renderAreaGrid();renderPlanner();renderList();
-function autoSwitchToMap(){
+
+// Start with map panel active (hidden behind splash)
+document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+document.getElementById('panel-map').classList.add('active');
+document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
+document.querySelector('[data-panel="map"]').classList.add('active');
+
+function initMap(){
+  buildMap();
   setTimeout(function(){
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-    document.getElementById('panel-map').classList.add('active');
-    document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-    document.querySelector('[data-panel="map"]').classList.add('active');
-    buildMap();
-    setTimeout(function(){if(theMap)theMap.invalidateSize()},300);
-    setTimeout(function(){if(theMap)theMap.invalidateSize()},1000);
+    if(theMap)theMap.invalidateSize();
+    // Fade out splash
+    setTimeout(function(){
+      document.getElementById('splash').classList.add('bye');
+      setTimeout(function(){document.getElementById('splash').style.display='none'},600);
+    },800);
   },500);
 }
-if(document.readyState==='complete'){autoSwitchToMap()}
-else{window.addEventListener('load',autoSwitchToMap)}
+if(document.readyState==='complete'){setTimeout(initMap,300)}
+else{window.addEventListener('load',function(){setTimeout(initMap,300)})}
 </script>
 </body>
 </html>
