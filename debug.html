@@ -3,43 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<title>Tile Test</title>
 </head>
-<body>
-<h2>Debug Test v2</h2>
-<div id="log" style="font-family:monospace;font-size:13px;padding:10px;background:#f0f0f0;white-space:pre-wrap"></div>
-<div id="testMap" style="width:100%;height:300px;background:#ddd;margin-top:10px"></div>
-
+<body style="padding:10px;font-family:monospace;font-size:13px">
+<h3>타일 서버 테스트</h3>
+<div id="log"></div>
 <script>
-var logEl = document.getElementById('log');
-function addLog(msg){ logEl.textContent += msg + '\n'; }
-
-addLog('1. Page loaded');
-
-// Test jsdelivr
-var img = new Image();
-img.onload = function(){ addLog('2. ✅ jsdelivr reachable (image test)'); };
-img.onerror = function(){ addLog('2. ❌ jsdelivr NOT reachable'); };
-img.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png';
-
-// Load Leaflet
-var js = document.createElement('script');
-js.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-js.onload = function(){
-  addLog('3. ✅ Leaflet JS loaded');
-  addLog('4. typeof L.map = ' + typeof L.map);
-  try {
-    var map = L.map('testMap').setView([35.676, 139.735], 12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    addLog('5. ✅ Map created!');
-    setTimeout(function(){ map.invalidateSize(); addLog('6. ✅ invalidateSize done'); }, 500);
-  } catch(e) {
-    addLog('5. ❌ Map error: ' + e.message);
-  }
-};
-js.onerror = function(){ addLog('3. ❌ Leaflet JS FAILED to load from jsdelivr'); };
-document.body.appendChild(js);
+var servers=[
+  {name:'OSM',url:'https://tile.openstreetmap.org/13/7275/3225.png'},
+  {name:'OSM-FR',url:'https://a.tile.openstreetmap.fr/hot/13/7275/3225.png'},
+  {name:'CartoDB',url:'https://a.basemaps.cartocdn.com/rastertiles/voyager/13/7275/3225.png'},
+  {name:'ArcGIS',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/3225/7275'},
+  {name:'Stamen',url:'https://tiles.stadiamaps.com/tiles/stamen_terrain/13/7275/3225.png'},
+  {name:'Google',url:'https://mt1.google.com/vt/lyrs=m&x=7275&y=3225&z=13'}
+];
+var log=document.getElementById('log');
+servers.forEach(function(s){
+  var img=new Image();
+  var div=document.createElement('div');
+  div.style.margin='8px 0';
+  div.textContent=s.name+': 로딩중...';
+  log.appendChild(div);
+  img.onload=function(){
+    div.innerHTML=s.name+': ✅ <b>작동!</b> ';
+    div.appendChild(img);
+    img.style.width='80px';img.style.height='80px';img.style.verticalAlign='middle';
+  };
+  img.onerror=function(){div.innerHTML=s.name+': ❌ 차단됨';};
+  img.src=s.url;
+});
 </script>
 </body>
 </html>

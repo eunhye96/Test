@@ -455,7 +455,32 @@ function buildMap(){
   var el=document.getElementById('realMap');
   if(!el||el.offsetWidth<10)return;
   theMap=L.map('realMap',{zoomControl:true,attributionControl:false}).setView([35.6762,139.735],12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(theMap);
+  // Try multiple tile servers
+  var tileLoaded=false;
+  var tiles=[
+    'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+  ];
+  var tileLayer=L.tileLayer(tiles[0],{maxZoom:19,subdomains:'abc'}).addTo(theMap);
+  tileLayer.on('tileerror',function(){
+    if(!tileLoaded){
+      tileLoaded=true;
+      theMap.removeLayer(tileLayer);
+      // Try next
+      for(var i=1;i<tiles.length;i++){
+        (function(url){
+          setTimeout(function(){
+            if(!tileLoaded){
+              tileLayer=L.tileLayer(url,{maxZoom:19,subdomains:'abcd'}).addTo(theMap);
+            }
+          },i*1000);
+        })(tiles[i]);
+      }
+    }
+  });
+  tileLayer.on('load',function(){tileLoaded=true});
   DATA.forEach(function(d){
     var ll=PLACE_LL[d.name];if(!ll)return;
     var col=AREA_COLORS[d.area]||'#999';
