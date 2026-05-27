@@ -30,7 +30,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .main-tab{font-family:'Gaegu',cursive;font-size:1.1rem;font-weight:700;padding:.5rem 1.2rem;border-radius:100px;border:2px solid var(--pink-light);background:var(--white);color:var(--brown);cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
 .main-tab:hover,.main-tab.active{background:var(--coral);border-color:var(--coral);color:var(--white);transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,140,124,.3)}
 
-.panel{display:none}.panel.active{display:block}
+.panel{height:0;overflow:hidden;opacity:0;transition:opacity .2s}.panel.active{height:auto;overflow:visible;opacity:1}
 
 /* ===== MAP PANEL ===== */
 .map-container{max-width:960px;margin:1.5rem auto;padding:0 1rem}
@@ -620,32 +620,17 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 // Init
 renderAreaGrid();renderPlanner();renderList();
 
-// Start on list panel (map hidden behind splash)
+// Map panel active
 document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-document.getElementById('panel-list').classList.add('active');
+document.getElementById('panel-map').classList.add('active');
+document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
+document.querySelector('[data-panel="map"]').classList.add('active');
 
-// Poll for Leaflet, then do the tab-switch trick behind splash
+// Poll for Leaflet and build map
 var mapPoll=setInterval(function(){
-  if(typeof L!=='undefined'&&L.map){
-    clearInterval(mapPoll);
-    // 1. Switch to map, build it
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-    document.getElementById('panel-map').classList.add('active');
-    if(!theMap)buildMap();
-    if(theMap)theMap.invalidateSize();
-    // 2. Switch to list
-    setTimeout(function(){
-      document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-      document.getElementById('panel-list').classList.add('active');
-      // 3. Switch back to map - this is what makes tiles render!
-      setTimeout(function(){
-        document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-        document.getElementById('panel-map').classList.add('active');
-        document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});
-        document.querySelector('[data-panel="map"]').classList.add('active');
-        if(theMap)theMap.invalidateSize();
-      },150);
-    },150);
+  if(typeof L!=='undefined'&&L.map&&!theMap){
+    buildMap();
+    if(theMap){theMap.invalidateSize();clearInterval(mapPoll)}
   }
 },500);
 </script>
