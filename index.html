@@ -8,8 +8,8 @@
 <link rel="stylesheet" href="leaflet.css"/>
 <script>window.onerror=function(m,s,l){var d=document.getElementById('jsError');if(!d){d=document.createElement('div');d.id='jsError';d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:red;color:white;padding:10px;font-size:12px;font-family:monospace;white-space:pre-wrap';(document.body||document.documentElement).appendChild(d)}d.textContent+='ERROR: '+m+' (line '+l+')\n'}</script>
 <script src="leaflet.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" async></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" async></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 :root{--cream:#FFF8F0;--pink:#FFB5B5;--pink-light:#FFE0E0;--peach:#FFDAB3;--mint:#B5E8D5;--mint-light:#E0F5EC;--sky:#B5D8F7;--sky-light:#E0EFFE;--lavender:#D4BEF0;--lavender-light:#EDE0FA;--yellow:#FFE9A0;--yellow-light:#FFF4D1;--coral:#FF8C7C;--brown:#8B6F5A;--brown-light:#A68B7B;--text:#5A4A3F;--text-light:#8B7B6F;--white:#fff;--shadow:rgba(139,111,90,.1)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -528,16 +528,11 @@ function updateSyncBadge(state){
   else{el.className='sync-badge offline';el.innerHTML='📱 로컬 모드'}
 }
 
-// Wait for Firebase to load (async), then init
-function tryFirebaseInit(){
-  if(typeof firebase!=='undefined'&&firebase.database){
-    initFirebase();
-  }else{
-    setTimeout(tryFirebaseInit,500);
-  }
+// Init Firebase - scripts loaded synchronously
+if(typeof firebase!=='undefined'&&firebase.database){
+  initFirebase();
 }
-tryFirebaseInit();
-// Give up after 10 seconds (offline mode)
+// Offline fallback after 5 seconds
 setTimeout(function(){
   if(!useFirebase){
     try{visited=JSON.parse(localStorage.getItem('tokyoVisited')||'{}');}catch(e){visited={}}
@@ -551,7 +546,7 @@ setTimeout(function(){
     renderPlanner();renderList();renderReview();renderSouvenir();
     updateSyncBadge('offline');
   }
-},10000);
+},5000);
 
 
 // ===== MAP (Leaflet) =====
