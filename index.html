@@ -912,6 +912,38 @@ function renderReview(){
   
   el.innerHTML=html;
 }
+
+// ===== SERVICE WORKER (Offline Support) =====
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(function(){
+    console.log('SW registered');
+  }).catch(function(e){console.log('SW error:',e)});
+}
+
+// Save data to localStorage as offline backup
+function saveOfflineBackup(){
+  try{
+    localStorage.setItem('tokyoVisited',JSON.stringify(visited));
+    localStorage.setItem('tokyoPlanner',JSON.stringify(planner));
+    localStorage.setItem('tokyoReviews',JSON.stringify(reviews));
+  }catch(e){}
+}
+// Backup every 10 seconds
+setInterval(saveOfflineBackup,10000);
+
+// If Firebase fails, load from localStorage
+setTimeout(function(){
+  if(!useFirebase){
+    try{visited=JSON.parse(localStorage.getItem('tokyoVisited')||'{}');}catch(e){visited={}}
+    try{
+      planner=JSON.parse(localStorage.getItem('tokyoPlanner')||'null');
+      if(!planner)planner=[{day:1,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:2,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}},{day:3,meals:{점심:[],저녁:[],간식:[],관광:[],메모:[]}}];
+      planner.forEach(function(d){if(!d.meals)d.meals={};if(!d.meals['점심'])d.meals['점심']=[];if(!d.meals['저녁'])d.meals['저녁']=[];if(!d.meals['간식'])d.meals['간식']=[];if(!d.meals['관광'])d.meals['관광']=[];if(!d.meals['메모'])d.meals['메모']=[];});
+    }catch(e){}
+    try{reviews=JSON.parse(localStorage.getItem('tokyoReviews')||'{}');}catch(e){reviews={}}
+    renderPlanner();renderList();renderReview();
+  }
+},3000);
 </script>
 </body>
 </html>
