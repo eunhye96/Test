@@ -198,6 +198,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
         <button class="planner-btn danger" onclick="clearPlanner()">초기화</button>
       </div>
     </div>
+    <div id="transportBlock"></div>
     <div id="plannerContent"></div>
   </div>
 </div>
@@ -531,8 +532,22 @@ function renderAreaGrid(){var grid=document.getElementById('areaGrid');if(!grid)
 function mapGoToList(area){document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});document.querySelector('[data-panel="list"]').classList.add('active');document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});document.getElementById('panel-list').classList.add('active');activeArea=area;document.querySelectorAll('.nav-pill').forEach(function(p){p.classList.remove('active');if(p.dataset.area===area)p.classList.add('active')});renderList();document.getElementById('panel-list').scrollIntoView({behavior:'smooth'});}
 
 // ===== PLANNER =====
+function renderTransport(){
+  var el=document.getElementById('transportBlock');
+  if(!el)return;
+  var t=(planner.length&&planner[0].transport)||'';
+  el.innerHTML='<div class="day-block" style="border-color:var(--sky);margin-bottom:1rem"><div class="day-title" style="color:var(--sky)">✈️ 공항 ↔ 도심 교통</div><textarea placeholder="예: 나리타공항 → 스카이라이너 → 우에노 (2470엔, 41분)&#10;하네다공항 → 모노레일 → 하마마츠쵸 (500엔, 13분)" onchange="saveTransport(this.value)" style="width:100%;min-height:70px;border:none;background:var(--cream);border-radius:8px;padding:.5rem .7rem;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);resize:vertical;line-height:1.6">'+(t||'').replace(/</g,'&lt;')+'</textarea></div>';
+}
+
+function saveTransport(val){
+  if(!planner.length)return;
+  planner[0].transport=val;
+  savePlanner();
+}
+
 function renderPlanner(){
   if(!planner||!planner.length)return;
+  renderTransport();
   let html='';
   planner.forEach((day,di)=>{
     html+=`<div class="day-block"><div class="day-title">🗓️ ${day.day}일차
@@ -541,9 +556,8 @@ function renderPlanner(){
       const items=day.meals[meal]||[];
       const mealEmoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':meal==='간식'?'🍡':meal==='관광'?'🏛️':'📝';
       if(meal==='메모'){
-        // Memo is a text input, not chips
         const memoVal=items.length?items[0]:'';
-        html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot"><input type="text" value="${(memoVal||'').replace(/"/g,'&quot;')}" placeholder="메모 입력..." onchange="saveMemo(${di},this.value)" style="flex:1;border:none;background:transparent;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;color:var(--text);min-width:0"></div></div>`;
+        html+=`<div class="meal-row" style="align-items:flex-start"><span class="meal-label" style="margin-top:.4rem">${mealEmoji} ${meal}</span><div class="meal-slot"><textarea placeholder="메모 입력..." onchange="saveMemo(${di},this.value)" style="flex:1;border:none;background:transparent;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);min-width:0;resize:vertical;min-height:36px;line-height:1.5">${(memoVal||'').replace(/</g,'&lt;')}</textarea></div></div>`;
       }else{
         html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot">`;
         if(items.length===0) html+=`<span class="meal-empty">탭해서 추가...</span>`;
