@@ -325,6 +325,9 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
       <button class="souv-view-btn" onclick="setSouvView('grid')">📷 그리드</button>
       <button class="souv-view-btn" onclick="setSouvView('text')">📝 텍스트</button>
     </div>
+    <div style="margin-bottom:1rem">
+      <input type="text" id="souvSearchInput" placeholder="🔍 기념품 검색..." oninput="renderSouvenir()" style="width:100%;padding:.5rem .8rem;border:2px solid var(--pink-light);border-radius:100px;font-size:.85rem;font-family:'Noto Sans KR',sans-serif;outline:none">
+    </div>
     <div id="souvenirContent"></div>
   </div>
 </div>
@@ -1175,20 +1178,28 @@ function renderSouvenir(){
   var el=document.getElementById('souvenirContent');
   if(!el)return;
   var savedNick=localStorage.getItem('tokyoNick')||'';
+  var searchEl=document.getElementById('souvSearchInput');
+  var q=searchEl?searchEl.value.trim().toLowerCase():'';
   if(!souvenirs||!souvenirs.length){
     el.innerHTML='<div class="review-empty">🛍️ 위에서 카테고리를 추가해보세요!<br><small style="font-size:.9rem">예: 편의점-로손, 돈키호테, 약국</small></div>';
     return;
   }
   var html='';
   souvenirs.forEach(function(cat,ci){
+    var items=cat.items||[];
+    var catMatch=cat.name.toLowerCase().indexOf(q)!==-1;
+    var filtered=q?items.filter(function(item){
+      return catMatch||item.text.toLowerCase().indexOf(q)!==-1||item.nick.toLowerCase().indexOf(q)!==-1;
+    }):items;
+    if(q&&!filtered.length&&!catMatch)return;
     html+='<div class="souv-cat">';
     html+='<div class="souv-cat-title"><span>🏷️ '+cat.name+'</span><span style="font-size:.75rem;cursor:pointer;color:var(--text-light)" onclick="removeSouvenirCategory('+ci+')">✕ 삭제</span></div>';
-    var items=cat.items||[];
+    var displayItems=q?filtered:items;
 
     if(souvView==='grid'){
       // Grid: photos only
       html+='<div class="souv-grid">';
-      items.forEach(function(item){
+      displayItems.forEach(function(item){
         var imgs=getItemImgs(item);
         imgs.forEach(function(src){
           html+='<div class="souv-grid-item" onclick="showPhoto(\''+src.substring(0,50)+'\')">';
@@ -1203,7 +1214,7 @@ function renderSouvenir(){
       html+='</div>';
     }else if(souvView==='text'){
       // Text: compact list
-      items.forEach(function(item,ii){
+      displayItems.forEach(function(item,ii){
         html+='<div class="souv-text-item">';
         html+='<span style="font-family:Gaegu,cursive;font-weight:700;color:var(--coral);flex-shrink:0;font-size:.8rem">'+item.nick+'</span>';
         html+='<span style="flex:1;color:var(--text)">'+item.text.replace(/</g,'&lt;')+'</span>';
@@ -1215,7 +1226,7 @@ function renderSouvenir(){
       });
     }else{
       // Card: default full view
-      items.forEach(function(item,ii){
+      displayItems.forEach(function(item,ii){
         html+='<div class="souv-item">';
         var imgs=getItemImgs(item);
         if(imgs.length){
