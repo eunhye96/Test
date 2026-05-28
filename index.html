@@ -1202,7 +1202,7 @@ function renderSouvenir(){
       displayItems.forEach(function(item){
         var imgs=getItemImgs(item);
         imgs.forEach(function(src){
-          html+='<div class="souv-grid-item" onclick="showPhoto(\''+src.substring(0,50)+'\')">';
+          html+='<div class="souv-grid-item">';
           html+='<img src="'+src+'" onclick="showPhoto(this.src)">';
           html+='<div class="souv-grid-label">'+item.nick+' · '+item.text.substring(0,20)+'</div>';
           html+='</div>';
