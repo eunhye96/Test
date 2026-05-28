@@ -898,10 +898,10 @@ function renderReview(){
         });
       }
       // Add new comment input
-      html+='<div style="display:flex;gap:.3rem;margin-top:.4rem">';
-      html+='<input id="rnick-'+name+'" value="'+savedNick.replace(/"/g,'&quot;')+'" placeholder="닉네임" style="width:60px;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif">';
-      html+='<input id="rtext-'+name+'" placeholder="한줄평 입력..." style="flex:1;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif">';
-      html+='<button onclick="addReviewComment(\''+eName+'\')" style="padding:.35rem .6rem;border-radius:8px;border:none;background:var(--coral);color:#fff;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap">등록</button>';
+      html+='<div style="display:flex;gap:.3rem;margin-top:.4rem;flex-wrap:wrap">';
+      html+='<input id="rnick-'+name+'" value="'+savedNick.replace(/"/g,'&quot;')+'" placeholder="닉네임" style="width:70px;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif;flex-shrink:0">';
+      html+='<input id="rtext-'+name+'" placeholder="한줄평 입력..." style="flex:1;min-width:100px;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif">';
+      html+='<button onclick="addReviewComment(\''+eName+'\')" style="padding:.35rem .6rem;border-radius:8px;border:none;background:var(--coral);color:#fff;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">등록</button>';
       html+='</div>';
     }else{
       html+='<div style="font-size:.8rem;color:var(--text-light);font-style:italic">체크하면 별점과 후기를 남길 수 있어요</div>';
