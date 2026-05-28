@@ -629,7 +629,8 @@ function renderTransport(){
   var el=document.getElementById('transportBlock');
   if(!el)return;
   var t=(planner.length&&planner[0].transport)||'';
-  el.innerHTML='<div class="day-block" style="border-color:var(--sky);margin-bottom:1rem"><div class="day-title" style="color:var(--sky)">✈️ 공항 ↔ 도심 교통</div><textarea placeholder="예: 나리타공항 → 스카이라이너 → 우에노 (2470엔, 41분)&#10;하네다공항 → 모노레일 → 하마마츠쵸 (500엔, 13분)" onchange="saveTransport(this.value)" style="width:100%;min-height:70px;border:none;background:var(--cream);border-radius:8px;padding:.5rem .7rem;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);resize:vertical;line-height:1.6">'+(t||'').replace(/</g,'&lt;')+'</textarea></div>';
+  el.innerHTML='<div class="day-block" style="border-color:var(--sky);margin-bottom:1rem"><div class="day-title" style="color:var(--sky)">✈️ 공항 ↔ 도심 교통</div><textarea id="transportArea" placeholder="예: 나리타공항 → 스카이라이너 → 우에노 (2470엔, 41분)&#10;하네다공항 → 모노레일 → 하마마츠쵸 (500엔, 13분)" onchange="saveTransport(this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" style="width:100%;min-height:70px;border:none;background:var(--cream);border-radius:8px;padding:.5rem .7rem;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);resize:none;line-height:1.6;overflow:hidden">'+(t||'').replace(/</g,'&lt;')+'</textarea></div>';
+  var ta=document.getElementById('transportArea');if(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'}
 }
 
 function saveTransport(val){
@@ -650,7 +651,7 @@ function renderPlanner(){
       const mealEmoji=meal==='점심'?'🌞':meal==='저녁'?'🌙':meal==='간식'?'🍡':meal==='관광'?'🏛️':'📝';
       if(meal==='메모'){
         const memoVal=items.length?items[0]:'';
-        html+=`<div class="meal-row" style="align-items:flex-start"><span class="meal-label" style="margin-top:.4rem">${mealEmoji} ${meal}</span><div class="meal-slot"><textarea placeholder="메모 입력..." onchange="saveMemo(${di},this.value)" style="flex:1;border:none;background:transparent;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);min-width:0;resize:vertical;min-height:36px;line-height:1.5">${(memoVal||'').replace(/</g,'&lt;')}</textarea></div></div>`;
+        html+=`<div class="meal-row" style="align-items:flex-start"><span class="meal-label" style="margin-top:.4rem">${mealEmoji} ${meal}</span><div class="meal-slot"><textarea placeholder="메모 입력..." onchange="saveMemo(${di},this.value)" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" style="flex:1;border:none;background:transparent;font-size:.82rem;font-family:Noto Sans KR,sans-serif;outline:none;color:var(--text);min-width:0;resize:none;min-height:36px;line-height:1.5;overflow:hidden">${(memoVal||'').replace(/</g,'&lt;')}</textarea></div></div>`;
       }else{
         html+=`<div class="meal-row"><span class="meal-label">${mealEmoji} ${meal}</span><div class="meal-slot">`;
         if(items.length===0) html+=`<span class="meal-empty">탭해서 추가...</span>`;
