@@ -480,6 +480,7 @@ function initFirebase(){
 
     db.ref('visited').on('value',snap=>{
       visited=snap.val()||{};
+      updateSyncBadge('online');
       renderList();
     });
 
@@ -496,10 +497,6 @@ function initFirebase(){
       renderPlanner();
     });
 
-    // connection state
-    db.ref('.info/connected').on('value',snap=>{
-      updateSyncBadge(snap.val()?'online':'reconnecting');
-    });
   }catch(e){
     console.error('Firebase error:',e);
     useFirebase=false;
