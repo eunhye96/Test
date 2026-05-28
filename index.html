@@ -170,9 +170,14 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .review-empty{text-align:center;padding:3rem;font-family:'Gaegu',cursive;font-size:1.2rem;color:var(--brown-light)}
 .souv-cat{background:var(--white);border-radius:14px;padding:1rem;margin-bottom:1rem;border:2px solid var(--peach)}
 .souv-cat-title{font-family:'Gaegu',cursive;font-size:1.2rem;font-weight:700;color:var(--brown);display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
-.souv-item{display:flex;gap:.6rem;padding:.6rem;background:var(--cream);border-radius:10px;margin-bottom:.5rem}
-.souv-item img{width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1.5px solid var(--pink-light)}
-.souv-item-text{flex:1;font-size:.82rem;color:var(--text);line-height:1.5}
+.souv-item{display:flex;gap:.6rem;padding:.6rem;background:var(--cream);border-radius:10px;margin-bottom:.5rem;flex-wrap:wrap}
+.souv-item img{width:100%;max-width:280px;height:auto;border-radius:8px;border:1.5px solid var(--pink-light);cursor:pointer}
+.souv-item-text{flex:1;min-width:150px;font-size:.82rem;color:var(--text);line-height:1.5}
+
+/* Fullscreen photo overlay */
+.photo-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:1rem;cursor:pointer}
+.photo-overlay.show{display:flex}
+.photo-overlay img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain}
 .souv-item-nick{font-family:'Gaegu',cursive;font-weight:700;color:var(--coral);font-size:.8rem}
 .souv-add-row{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.5rem;align-items:flex-end}
 .souv-add-row input,.souv-add-row textarea{padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:'Noto Sans KR',sans-serif}
@@ -275,6 +280,9 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
     <div id="reviewContent"></div>
   </div>
 </div>
+
+<!-- PHOTO OVERLAY -->
+<div class="photo-overlay" id="photoOverlay" onclick="this.classList.remove('show')"><img id="photoOverlayImg"></div>
 
 <!-- SOUVENIR PANEL -->
 <div class="panel" id="panel-souvenir">
@@ -1052,7 +1060,7 @@ function renderSouvenir(){
     var items=cat.items||[];
     items.forEach(function(item,ii){
       html+='<div class="souv-item">';
-      if(item.img)html+='<img src="'+item.img+'">';
+      if(item.img)html+='<img src="'+item.img+'" onclick="document.getElementById(\'photoOverlayImg\').src=this.src;document.getElementById(\'photoOverlay\').classList.add(\'show\')">';
       html+='<div style="flex:1"><div class="souv-item-nick">'+item.nick+(item.time?' · '+item.time:'')+'<span style="cursor:pointer;font-size:.6rem;color:var(--text-light);margin-left:.4rem" onclick="removeSouvenirItem('+ci+','+ii+')">✕</span></div>';
       html+='<div class="souv-item-text">'+item.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
       html+='</div></div>';
