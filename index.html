@@ -168,6 +168,16 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 .review-textarea{width:100%;border:1.5px solid var(--pink-light);border-radius:10px;padding:.5rem .7rem;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;color:var(--text);resize:vertical;min-height:40px;line-height:1.5;background:var(--cream)}
 .review-textarea:focus{border-color:var(--coral)}
 .review-empty{text-align:center;padding:3rem;font-family:'Gaegu',cursive;font-size:1.2rem;color:var(--brown-light)}
+.souv-cat{background:var(--white);border-radius:14px;padding:1rem;margin-bottom:1rem;border:2px solid var(--peach)}
+.souv-cat-title{font-family:'Gaegu',cursive;font-size:1.2rem;font-weight:700;color:var(--brown);display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.souv-item{display:flex;gap:.6rem;padding:.6rem;background:var(--cream);border-radius:10px;margin-bottom:.5rem}
+.souv-item img{width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1.5px solid var(--pink-light)}
+.souv-item-text{flex:1;font-size:.82rem;color:var(--text);line-height:1.5}
+.souv-item-nick{font-family:'Gaegu',cursive;font-weight:700;color:var(--coral);font-size:.8rem}
+.souv-add-row{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.5rem;align-items:flex-end}
+.souv-add-row input,.souv-add-row textarea{padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:'Noto Sans KR',sans-serif}
+.souv-photo-label{display:inline-flex;align-items:center;gap:.2rem;padding:.35rem .6rem;border-radius:8px;background:var(--sky-light);border:1.5px solid var(--sky);font-size:.75rem;cursor:pointer;color:var(--text)}
+.souv-photo-label:hover{background:var(--sky)}
 </style>
 </head>
 <body>
@@ -190,6 +200,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
   <button class="main-tab" data-panel="planner">📅 일정</button>
   <button class="main-tab" data-panel="list">📋 리스트</button>
   <button class="main-tab" data-panel="review">📸 후기</button>
+  <button class="main-tab" data-panel="souvenir">🛍️ 기념품</button>
 </div>
 
 <!-- MAP PANEL -->
@@ -262,6 +273,18 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
       <button onclick="addManualReview()" style="padding:.5rem 1rem;border-radius:100px;border:none;background:var(--coral);color:#fff;font-family:'Gaegu',cursive;font-size:.95rem;font-weight:700;cursor:pointer;white-space:nowrap">+ 추가</button>
     </div>
     <div id="reviewContent"></div>
+  </div>
+</div>
+
+<!-- SOUVENIR PANEL -->
+<div class="panel" id="panel-souvenir">
+  <div style="max-width:900px;margin:1.5rem auto;padding:0 1.5rem">
+    <div style="text-align:center;font-family:'Gaegu',cursive;font-size:1.6rem;font-weight:700;color:var(--brown);margin-bottom:.5rem">🛍️ 기념품 & 쇼핑</div>
+    <div style="display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap">
+      <input type="text" id="newCategoryInput" placeholder="카테고리 (예: 편의점-로손)" style="flex:1;min-width:150px;padding:.5rem .8rem;border:2px solid var(--pink-light);border-radius:100px;font-size:.85rem;font-family:'Noto Sans KR',sans-serif;outline:none">
+      <button onclick="addSouvenirCategory()" style="padding:.5rem 1rem;border-radius:100px;border:none;background:var(--coral);color:#fff;font-family:'Gaegu',cursive;font-size:.95rem;font-weight:700;cursor:pointer;white-space:nowrap">+ 카테고리 추가</button>
+    </div>
+    <div id="souvenirContent"></div>
   </div>
 </div>
 
@@ -743,7 +766,7 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 });
 
 // Init
-renderAreaGrid();renderPlanner();renderList();renderReview();
+renderAreaGrid();renderPlanner();renderList();renderReview();renderSouvenir();
 buildMap();
 setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
 setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
@@ -906,6 +929,143 @@ function renderReview(){
     }else{
       html+='<div style="font-size:.8rem;color:var(--text-light);font-style:italic">체크하면 별점과 후기를 남길 수 있어요</div>';
     }
+    
+    html+='</div>';
+  });
+  
+  el.innerHTML=html;
+}
+
+// ===== SERVICE WORKER (Offline Support) =====
+
+// ===== SOUVENIR =====
+var souvenirs=[];
+
+function initSouvenirSync(){
+  if(!useFirebase||!db)return;
+  db.ref('souvenirs').on('value',function(snap){
+    souvenirs=snap.val()||[];
+    renderSouvenir();
+  });
+}
+setTimeout(initSouvenirSync,2500);
+
+function saveSouvenirs(){
+  if(useFirebase&&db){db.ref('souvenirs').set(souvenirs)}
+  else{localStorage.setItem('tokyoSouvenirs',JSON.stringify(souvenirs))}
+}
+
+function addSouvenirCategory(){
+  var input=document.getElementById('newCategoryInput');
+  var name=input.value.trim();
+  if(!name)return;
+  souvenirs.push({name:name,items:[]});
+  input.value='';
+  saveSouvenirs();renderSouvenir();
+}
+
+function removeSouvenirCategory(ci){
+  if(!confirm(souvenirs[ci].name+' 카테고리를 삭제할까요?'))return;
+  souvenirs.splice(ci,1);
+  saveSouvenirs();renderSouvenir();
+}
+
+function compressImage(file,callback){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var max=400;
+      var w=img.width,h=img.height;
+      if(w>h){if(w>max){h=h*(max/w);w=max}}
+      else{if(h>max){w=w*(max/h);h=max}}
+      canvas.width=w;canvas.height=h;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      var data=canvas.toDataURL('image/jpeg',0.6);
+      callback(data);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addSouvenirItem(ci){
+  var nick=document.getElementById('snick-'+ci);
+  var text=document.getElementById('stext-'+ci);
+  var file=document.getElementById('sfile-'+ci);
+  if(!nick||!text)return;
+  var nickVal=nick.value.trim()||'익명';
+  var textVal=text.value.trim();
+  if(!textVal)return;
+  
+  localStorage.setItem('tokyoNick',nickVal);
+  
+  if(file&&file.files&&file.files[0]){
+    compressImage(file.files[0],function(imgData){
+      if(!souvenirs[ci].items)souvenirs[ci].items=[];
+      souvenirs[ci].items.push({nick:nickVal,text:textVal,img:imgData,time:new Date().toLocaleDateString('ko-KR')});
+      text.value='';file.value='';
+      var preview=document.getElementById('spreview-'+ci);
+      if(preview)preview.style.display='none';
+      saveSouvenirs();renderSouvenir();
+    });
+  }else{
+    if(!souvenirs[ci].items)souvenirs[ci].items=[];
+    souvenirs[ci].items.push({nick:nickVal,text:textVal,img:null,time:new Date().toLocaleDateString('ko-KR')});
+    text.value='';
+    saveSouvenirs();renderSouvenir();
+  }
+}
+
+function removeSouvenirItem(ci,ii){
+  souvenirs[ci].items.splice(ii,1);
+  saveSouvenirs();renderSouvenir();
+}
+
+function previewSouvenirPhoto(ci){
+  var file=document.getElementById('sfile-'+ci);
+  var preview=document.getElementById('spreview-'+ci);
+  if(file&&file.files&&file.files[0]&&preview){
+    var reader=new FileReader();
+    reader.onload=function(e){preview.src=e.target.result;preview.style.display='block'};
+    reader.readAsDataURL(file.files[0]);
+  }
+}
+
+function renderSouvenir(){
+  var el=document.getElementById('souvenirContent');
+  if(!el)return;
+  var savedNick=localStorage.getItem('tokyoNick')||'';
+  
+  if(!souvenirs||!souvenirs.length){
+    el.innerHTML='<div class="review-empty">🛍️ 위에서 카테고리를 추가해보세요!<br><small style="font-size:.9rem">예: 편의점-로손, 돈키호테, 약국</small></div>';
+    return;
+  }
+  
+  var html='';
+  souvenirs.forEach(function(cat,ci){
+    html+='<div class="souv-cat">';
+    html+='<div class="souv-cat-title"><span>🏷️ '+cat.name+'</span><span style="font-size:.75rem;cursor:pointer;color:var(--text-light)" onclick="removeSouvenirCategory('+ci+')">✕ 삭제</span></div>';
+    
+    var items=cat.items||[];
+    items.forEach(function(item,ii){
+      html+='<div class="souv-item">';
+      if(item.img)html+='<img src="'+item.img+'">';
+      html+='<div style="flex:1"><div class="souv-item-nick">'+item.nick+(item.time?' · '+item.time:'')+'<span style="cursor:pointer;font-size:.6rem;color:var(--text-light);margin-left:.4rem" onclick="removeSouvenirItem('+ci+','+ii+')">✕</span></div>';
+      html+='<div class="souv-item-text">'+item.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
+      html+='</div></div>';
+    });
+    
+    // Add item form
+    html+='<div class="souv-add-row">';
+    html+='<input id="snick-'+ci+'" value="'+savedNick.replace(/"/g,'&quot;')+'" placeholder="닉네임" style="width:65px">';
+    html+='<textarea id="stext-'+ci+'" placeholder="상품명, 가격, 후기 등..." style="flex:1;min-width:120px;min-height:36px;resize:vertical"></textarea>';
+    html+='<label class="souv-photo-label">📷 사진<input type="file" id="sfile-'+ci+'" accept="image/*" style="display:none" onchange="previewSouvenirPhoto('+ci+')"></label>';
+    html+='<img id="spreview-'+ci+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:none">';
+    html+='<button onclick="addSouvenirItem('+ci+')" style="padding:.35rem .6rem;border-radius:8px;border:none;background:var(--coral);color:#fff;font-size:.75rem;font-weight:700;cursor:pointer">등록</button>';
+    html+='</div>';
     
     html+='</div>';
   });
