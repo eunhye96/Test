@@ -786,16 +786,43 @@ function setReviewStars(name,stars){
 }
 
 function setReviewComment(name,val){
-  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:''};
-  reviews[name].comment=val;
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comments:[]};
+  // migrate old single comment
+  if(reviews[name].comment&&!reviews[name].comments){
+    reviews[name].comments=[{nick:'',text:reviews[name].comment}];
+    delete reviews[name].comment;
+  }
   saveReviews();
+}
+
+function addReviewComment(name){
+  var nickEl=document.getElementById('rnick-'+CSS.escape(name));
+  var textEl=document.getElementById('rtext-'+CSS.escape(name));
+  if(!nickEl||!textEl)return;
+  var nick=nickEl.value.trim();
+  var text=textEl.value.trim();
+  if(!nick||!text)return;
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comments:[]};
+  if(!reviews[name].comments)reviews[name].comments=[];
+  reviews[name].comments.push({nick:nick,text:text,time:new Date().toLocaleDateString('ko-KR')});
+  // save nickname for next time
+  localStorage.setItem('tokyoNick',nick);
+  nickEl.value=nick;
+  textEl.value='';
+  saveReviews();renderReview();
+}
+
+function removeReviewComment(name,ci){
+  if(!reviews[name]||!reviews[name].comments)return;
+  reviews[name].comments.splice(ci,1);
+  saveReviews();renderReview();
 }
 
 function addManualReview(){
   var input=document.getElementById('manualReviewInput');
   var name=input.value.trim();
   if(!name)return;
-  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:'',manual:true};
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comments:[],manual:true};
   else reviews[name].eaten=true;
   input.value='';
   saveReviews();renderReview();
@@ -804,6 +831,7 @@ function addManualReview(){
 function renderReview(){
   var el=document.getElementById('reviewContent');
   if(!el)return;
+  var savedNick=localStorage.getItem('tokyoNick')||'';
   
   // Collect all unique names from planner meals (not 메모)
   var plannerItems={};
@@ -834,13 +862,17 @@ function renderReview(){
   
   var html='';
   names.forEach(function(name){
-    var r=reviews[name]||{eaten:false,stars:0,comment:''};
+    var r=reviews[name]||{eaten:false,stars:0,comments:[]};
+    // migrate old format
+    if(r.comment&&!r.comments){r.comments=[{nick:'',text:r.comment}];delete r.comment;}
+    if(!r.comments)r.comments=[];
     var d=DATA.find(function(dd){return dd.name===name});
     var dayInfo=plannerItems[name].days.join(', ');
+    var eName=name.replace(/'/g,"\\'");
     
     html+='<div class="review-card">';
     html+='<div class="review-card-top">';
-    html+='<div style="cursor:pointer;font-size:1.2rem" onclick="toggleReviewEaten(\''+name.replace(/'/g,"\\'")+'\')">'+(r.eaten?'✅':'⬜')+'</div>';
+    html+='<div style="cursor:pointer;font-size:1.2rem" onclick="toggleReviewEaten(\''+eName+'\')">'+(r.eaten?'✅':'⬜')+'</div>';
     html+='<div><div class="review-card-name">'+name+'</div>';
     html+='<div class="review-card-area">'+(d?((areaEmojis[d.area]||'')+' '+d.area+' · '+d.cat):'')+'  ·  '+dayInfo+'</div></div>';
     html+='</div>';
@@ -849,11 +881,26 @@ function renderReview(){
       // Stars
       html+='<div class="review-stars">';
       for(var s=1;s<=5;s++){
-        html+='<span class="review-star" onclick="setReviewStars(\''+name.replace(/'/g,"\\'")+'\','+s+')">'+(s<=r.stars?'⭐':'☆')+'</span>';
+        html+='<span class="review-star" onclick="setReviewStars(\''+eName+'\','+s+')">'+(s<=r.stars?'⭐':'☆')+'</span>';
       }
       html+='</div>';
-      // Comment
-      html+='<textarea class="review-textarea" placeholder="한줄평을 남겨보세요! 🍽️" onchange="setReviewComment(\''+name.replace(/'/g,"\\'")+'\',this.value)">'+((r.comment||'').replace(/</g,'&lt;'))+'</textarea>';
+      // Existing comments
+      if(r.comments.length){
+        r.comments.forEach(function(c,ci){
+          html+='<div style="display:flex;align-items:flex-start;gap:.4rem;margin-bottom:.4rem;padding:.4rem .6rem;background:var(--cream);border-radius:8px">';
+          html+='<span style="font-family:Gaegu,cursive;font-weight:700;color:var(--coral);flex-shrink:0;font-size:.85rem">'+(c.nick||'익명')+'</span>';
+          html+='<span style="font-size:.82rem;color:var(--text);flex:1">'+((c.text||'').replace(/</g,'&lt;'))+'</span>';
+          if(c.time)html+='<span style="font-size:.65rem;color:var(--text-light);flex-shrink:0">'+c.time+'</span>';
+          html+='<span style="cursor:pointer;font-size:.65rem;color:var(--text-light)" onclick="removeReviewComment(\''+eName+'\','+ci+')">✕</span>';
+          html+='</div>';
+        });
+      }
+      // Add new comment input
+      html+='<div style="display:flex;gap:.3rem;margin-top:.4rem">';
+      html+='<input id="rnick-'+name+'" value="'+savedNick.replace(/"/g,'&quot;')+'" placeholder="닉네임" style="width:60px;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif">';
+      html+='<input id="rtext-'+name+'" placeholder="한줄평 입력..." style="flex:1;padding:.35rem .5rem;border:1.5px solid var(--pink-light);border-radius:8px;font-size:.78rem;outline:none;font-family:Noto Sans KR,sans-serif">';
+      html+='<button onclick="addReviewComment(\''+eName+'\')" style="padding:.35rem .6rem;border-radius:8px;border:none;background:var(--coral);color:#fff;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap">등록</button>';
+      html+='</div>';
     }else{
       html+='<div style="font-size:.8rem;color:var(--text-light);font-style:italic">체크하면 별점과 후기를 남길 수 있어요</div>';
     }
