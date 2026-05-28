@@ -284,6 +284,21 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 <!-- PHOTO OVERLAY -->
 <div class="photo-overlay" id="photoOverlay" onclick="this.classList.remove('show')"><img id="photoOverlayImg"></div>
 
+<!-- CROP MODAL -->
+<div class="modal-overlay" id="cropModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3>✂️ 사진 자르기</h3><button class="modal-close" onclick="cancelCrop()">✕</button></div>
+    <div style="padding:.8rem;text-align:center;overflow:auto">
+      <div style="font-size:.8rem;color:var(--text-light);margin-bottom:.5rem">네모를 드래그해서 원하는 부분을 선택하세요</div>
+      <canvas id="cropCanvas" style="max-width:100%;border-radius:8px;touch-action:none"></canvas>
+      <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.8rem">
+        <button onclick="cancelCrop()" style="padding:.4rem 1rem;border-radius:100px;border:2px solid var(--pink-light);background:var(--white);font-family:'Gaegu',cursive;font-size:.95rem;color:var(--brown);cursor:pointer">취소</button>
+        <button onclick="applyCrop()" style="padding:.4rem 1rem;border-radius:100px;border:none;background:var(--coral);color:#fff;font-family:'Gaegu',cursive;font-size:.95rem;font-weight:700;cursor:pointer">✂️ 자르기 완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- SOUVENIR PANEL -->
 <div class="panel" id="panel-souvenir">
   <div style="max-width:900px;margin:1.5rem auto;padding:0 1.5rem">
@@ -944,9 +959,104 @@ function renderReview(){
   el.innerHTML=html;
 }
 
-// ===== SERVICE WORKER (Offline Support) =====
+// Photo fullscreen
+function showPhoto(src){
+  document.getElementById('photoOverlayImg').src=src;
+  document.getElementById('photoOverlay').classList.add('show');
+}
 
-// ===== SOUVENIR =====
+// ===== IMAGE CROP =====
+var cropCallback=null;
+var cropImg=new Image();
+var cropX=0,cropY=0,cropSize=200,cropDragging=false,cropStartX=0,cropStartY=0;
+
+function openCrop(file,ci){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    cropImg.onload=function(){
+      cropCallback=ci;
+      var modal=document.getElementById('cropModal');
+      var canvas=document.getElementById('cropCanvas');
+      var ctx=canvas.getContext('2d');
+      // Fit image in canvas
+      var maxW=Math.min(window.innerWidth-40,500);
+      var scale=maxW/cropImg.width;
+      if(scale>1)scale=1;
+      canvas.width=cropImg.width*scale;
+      canvas.height=cropImg.height*scale;
+      cropSize=Math.min(canvas.width,canvas.height)*0.7;
+      cropX=(canvas.width-cropSize)/2;
+      cropY=(canvas.height-cropSize)/2;
+      drawCrop(ctx,scale);
+      modal.classList.add('show');
+      
+      // Touch/mouse events
+      canvas.onmousedown=canvas.ontouchstart=function(ev){
+        ev.preventDefault();
+        var rect=canvas.getBoundingClientRect();
+        var px=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
+        var py=(ev.touches?ev.touches[0].clientY:ev.clientY)-rect.top;
+        cropDragging=true;cropStartX=px-cropX;cropStartY=py-cropY;
+      };
+      canvas.onmousemove=canvas.ontouchmove=function(ev){
+        if(!cropDragging)return;ev.preventDefault();
+        var rect=canvas.getBoundingClientRect();
+        var px=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
+        var py=(ev.touches?ev.touches[0].clientY:ev.clientY)-rect.top;
+        cropX=Math.max(0,Math.min(canvas.width-cropSize,px-cropStartX));
+        cropY=Math.max(0,Math.min(canvas.height-cropSize,py-cropStartY));
+        drawCrop(ctx,scale);
+      };
+      canvas.onmouseup=canvas.ontouchend=function(){cropDragging=false};
+    };
+    cropImg.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawCrop(ctx,scale){
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.drawImage(cropImg,0,0,ctx.canvas.width,ctx.canvas.height);
+  // Darken outside
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(0,0,ctx.canvas.width,cropY);
+  ctx.fillRect(0,cropY+cropSize,ctx.canvas.width,ctx.canvas.height-cropY-cropSize);
+  ctx.fillRect(0,cropY,cropX,cropSize);
+  ctx.fillRect(cropX+cropSize,cropY,ctx.canvas.width-cropX-cropSize,cropSize);
+  // Border
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;
+  ctx.strokeRect(cropX,cropY,cropSize,cropSize);
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(cropX+cropSize/3,cropY);ctx.lineTo(cropX+cropSize/3,cropY+cropSize);
+  ctx.moveTo(cropX+cropSize*2/3,cropY);ctx.lineTo(cropX+cropSize*2/3,cropY+cropSize);
+  ctx.moveTo(cropX,cropY+cropSize/3);ctx.lineTo(cropX+cropSize,cropY+cropSize/3);
+  ctx.moveTo(cropX,cropY+cropSize*2/3);ctx.lineTo(cropX+cropSize,cropY+cropSize*2/3);
+  ctx.stroke();
+}
+
+function applyCrop(){
+  var canvas=document.getElementById('cropCanvas');
+  var scale=cropImg.width/canvas.width;
+  var out=document.createElement('canvas');
+  out.width=400;out.height=400;
+  var ctx=out.getContext('2d');
+  ctx.drawImage(cropImg,cropX*scale,cropY*scale,cropSize*scale,cropSize*scale,0,0,400,400);
+  var data=out.toDataURL('image/jpeg',0.7);
+  document.getElementById('cropModal').classList.remove('show');
+  // Store cropped image for the pending upload
+  window._croppedImg=data;
+  window._croppedCI=cropCallback;
+  // Show preview
+  var preview=document.getElementById('spreview-'+cropCallback);
+  if(preview){preview.src=data;preview.style.display='block'}
+}
+
+function cancelCrop(){
+  document.getElementById('cropModal').classList.remove('show');
+  window._croppedImg=null;
+}
 var souvenirs=[];
 
 function initSouvenirSync(){
@@ -1002,7 +1112,6 @@ function compressImage(file,callback){
 function addSouvenirItem(ci){
   var nick=document.getElementById('snick-'+ci);
   var text=document.getElementById('stext-'+ci);
-  var file=document.getElementById('sfile-'+ci);
   if(!nick||!text)return;
   var nickVal=nick.value.trim()||'익명';
   var textVal=text.value.trim();
@@ -1010,21 +1119,18 @@ function addSouvenirItem(ci){
   
   localStorage.setItem('tokyoNick',nickVal);
   
-  if(file&&file.files&&file.files[0]){
-    compressImage(file.files[0],function(imgData){
-      if(!souvenirs[ci].items)souvenirs[ci].items=[];
-      souvenirs[ci].items.push({nick:nickVal,text:textVal,img:imgData,time:new Date().toLocaleDateString('ko-KR')});
-      text.value='';file.value='';
-      var preview=document.getElementById('spreview-'+ci);
-      if(preview)preview.style.display='none';
-      saveSouvenirs();renderSouvenir();
-    });
-  }else{
-    if(!souvenirs[ci].items)souvenirs[ci].items=[];
-    souvenirs[ci].items.push({nick:nickVal,text:textVal,img:null,time:new Date().toLocaleDateString('ko-KR')});
-    text.value='';
-    saveSouvenirs();renderSouvenir();
+  var imgData=null;
+  if(window._croppedImg&&window._croppedCI===ci){
+    imgData=window._croppedImg;
+    window._croppedImg=null;
   }
+  
+  if(!souvenirs[ci].items)souvenirs[ci].items=[];
+  souvenirs[ci].items.push({nick:nickVal,text:textVal,img:imgData,time:new Date().toLocaleDateString('ko-KR')});
+  text.value='';
+  var file=document.getElementById('sfile-'+ci);if(file)file.value='';
+  var preview=document.getElementById('spreview-'+ci);if(preview)preview.style.display='none';
+  saveSouvenirs();renderSouvenir();
 }
 
 function removeSouvenirItem(ci,ii){
@@ -1034,11 +1140,8 @@ function removeSouvenirItem(ci,ii){
 
 function previewSouvenirPhoto(ci){
   var file=document.getElementById('sfile-'+ci);
-  var preview=document.getElementById('spreview-'+ci);
-  if(file&&file.files&&file.files[0]&&preview){
-    var reader=new FileReader();
-    reader.onload=function(e){preview.src=e.target.result;preview.style.display='block'};
-    reader.readAsDataURL(file.files[0]);
+  if(file&&file.files&&file.files[0]){
+    openCrop(file.files[0],ci);
   }
 }
 
@@ -1060,7 +1163,7 @@ function renderSouvenir(){
     var items=cat.items||[];
     items.forEach(function(item,ii){
       html+='<div class="souv-item">';
-      if(item.img)html+='<img src="'+item.img+'" onclick="document.getElementById(\'photoOverlayImg\').src=this.src;document.getElementById(\'photoOverlay\').classList.add(\'show\')">';
+      if(item.img)html+='<img src="'+item.img+'" onclick="showPhoto(this.src)">';
       html+='<div style="flex:1"><div class="souv-item-nick">'+item.nick+(item.time?' · '+item.time:'')+'<span style="cursor:pointer;font-size:.6rem;color:var(--text-light);margin-left:.4rem" onclick="removeSouvenirItem('+ci+','+ii+')">✕</span></div>';
       html+='<div class="souv-item-text">'+item.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
       html+='</div></div>';
