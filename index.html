@@ -156,6 +156,18 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 @media(min-width:600px){.cards{grid-template-columns:1fr 1fr}.hero h1{font-size:3rem}}
 @media(max-width:599px){.hero h1{font-size:2rem}.hero-emoji{font-size:2.8rem}.section-title{font-size:1.2rem}.main-tab{font-size:.95rem;padding:.4rem .8rem}}
 .card{opacity:0;transform:translateY(12px)}.card.show{opacity:1;transform:translateY(0);transition:all .35s ease}.card.visited.show{opacity:.5}
+
+/* Review */
+.review-card{background:var(--white);border-radius:14px;padding:1rem;margin-bottom:.7rem;border:2px solid var(--pink-light)}
+.review-card-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.review-card-name{font-family:'Gaegu',cursive;font-size:1.15rem;font-weight:700;color:var(--brown);flex:1}
+.review-card-area{font-size:.72rem;color:var(--text-light)}
+.review-stars{display:flex;gap:.15rem;margin-bottom:.5rem}
+.review-star{font-size:1.4rem;cursor:pointer;transition:transform .15s}
+.review-star:hover{transform:scale(1.3)}
+.review-textarea{width:100%;border:1.5px solid var(--pink-light);border-radius:10px;padding:.5rem .7rem;font-size:.82rem;font-family:'Noto Sans KR',sans-serif;outline:none;color:var(--text);resize:vertical;min-height:40px;line-height:1.5;background:var(--cream)}
+.review-textarea:focus{border-color:var(--coral)}
+.review-empty{text-align:center;padding:3rem;font-family:'Gaegu',cursive;font-size:1.2rem;color:var(--brown-light)}
 </style>
 </head>
 <body>
@@ -177,6 +189,7 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
   <button class="main-tab active" data-panel="map">🗺️ 지도</button>
   <button class="main-tab" data-panel="planner">📅 일정</button>
   <button class="main-tab" data-panel="list">📋 리스트</button>
+  <button class="main-tab" data-panel="review">📸 후기</button>
 </div>
 
 <!-- MAP PANEL -->
@@ -237,6 +250,15 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
     <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   </div>
   <div class="content" id="content"></div>
+</div>
+
+<!-- REVIEW PANEL -->
+<div class="panel" id="panel-review">
+  <div style="max-width:900px;margin:1.5rem auto;padding:0 1.5rem">
+    <div style="text-align:center;font-family:'Gaegu',cursive;font-size:1.6rem;font-weight:700;color:var(--brown);margin-bottom:.5rem">📸 방문 후기</div>
+    <div style="text-align:center;font-size:.85rem;color:var(--text-light);margin-bottom:1.2rem">체크한 곳들의 별점과 한줄평을 남겨보세요!</div>
+    <div id="reviewContent"></div>
+  </div>
 </div>
 
 <div class="footer"><span class="footer-emoji">🍙🍡🍣</span>도쿄에서 맛있는 거 많이 먹자!<br><small style="font-size:.8rem;color:var(--text-light)">실시간 동기화 — 친구들과 함께! 🔄</small></div>
@@ -717,10 +739,109 @@ document.querySelectorAll('.main-tab').forEach(tab=>{
 });
 
 // Init
-renderAreaGrid();renderPlanner();renderList();
+renderAreaGrid();renderPlanner();renderList();renderReview();
 buildMap();
 setTimeout(function(){if(theMap)theMap.invalidateSize()},500);
 setTimeout(function(){if(theMap)theMap.invalidateSize()},1500);
+
+// ===== REVIEWS =====
+var reviews={};
+
+function initReviewSync(){
+  if(!useFirebase||!db)return;
+  db.ref('reviews').on('value',function(snap){
+    reviews=snap.val()||{};
+    renderReview();
+  });
+}
+// call after firebase init
+var origInitFB=initFirebase;
+initFirebase=function(){
+  origInitFB();
+  setTimeout(initReviewSync,500);
+};
+// also try now
+setTimeout(initReviewSync,2000);
+
+function saveReviews(){
+  if(useFirebase&&db){db.ref('reviews').set(reviews)}
+  else{localStorage.setItem('tokyoReviews',JSON.stringify(reviews))}
+}
+
+function toggleReviewEaten(name){
+  if(!reviews[name])reviews[name]={eaten:false,stars:0,comment:''};
+  reviews[name].eaten=!reviews[name].eaten;
+  if(!reviews[name].eaten){reviews[name].stars=0;reviews[name].comment='';}
+  saveReviews();renderReview();
+}
+
+function setReviewStars(name,stars){
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:''};
+  reviews[name].stars=stars;
+  saveReviews();renderReview();
+}
+
+function setReviewComment(name,val){
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:''};
+  reviews[name].comment=val;
+  saveReviews();
+}
+
+function renderReview(){
+  var el=document.getElementById('reviewContent');
+  if(!el)return;
+  
+  // Collect all unique names from planner meals (not 메모)
+  var plannerItems={};
+  if(planner&&planner.length){
+    planner.forEach(function(day,di){
+      ['점심','저녁','간식','관광'].forEach(function(meal){
+        var items=day.meals[meal]||[];
+        items.forEach(function(name){
+          if(!plannerItems[name])plannerItems[name]={days:[]};
+          plannerItems[name].days.push(day.day+'일차 '+meal);
+        });
+      });
+    });
+  }
+  
+  var names=Object.keys(plannerItems);
+  if(!names.length){
+    el.innerHTML='<div class="review-empty">📅 일정에 가게를 추가하면 여기서 후기를 남길 수 있어요!</div>';
+    return;
+  }
+  
+  var html='';
+  names.forEach(function(name){
+    var r=reviews[name]||{eaten:false,stars:0,comment:''};
+    var d=DATA.find(function(dd){return dd.name===name});
+    var dayInfo=plannerItems[name].days.join(', ');
+    
+    html+='<div class="review-card">';
+    html+='<div class="review-card-top">';
+    html+='<div style="cursor:pointer;font-size:1.2rem" onclick="toggleReviewEaten(\''+name.replace(/'/g,"\\'")+'\')">'+(r.eaten?'✅':'⬜')+'</div>';
+    html+='<div><div class="review-card-name">'+name+'</div>';
+    html+='<div class="review-card-area">'+(d?((areaEmojis[d.area]||'')+' '+d.area+' · '+d.cat):'')+'  ·  '+dayInfo+'</div></div>';
+    html+='</div>';
+    
+    if(r.eaten){
+      // Stars
+      html+='<div class="review-stars">';
+      for(var s=1;s<=5;s++){
+        html+='<span class="review-star" onclick="setReviewStars(\''+name.replace(/'/g,"\\'")+'\','+s+')">'+(s<=r.stars?'⭐':'☆')+'</span>';
+      }
+      html+='</div>';
+      // Comment
+      html+='<textarea class="review-textarea" placeholder="한줄평을 남겨보세요! 🍽️" onchange="setReviewComment(\''+name.replace(/'/g,"\\'")+'\',this.value)">'+((r.comment||'').replace(/</g,'&lt;'))+'</textarea>';
+    }else{
+      html+='<div style="font-size:.8rem;color:var(--text-light);font-style:italic">체크하면 별점과 후기를 남길 수 있어요</div>';
+    }
+    
+    html+='</div>';
+  });
+  
+  el.innerHTML=html;
+}
 </script>
 </body>
 </html>
