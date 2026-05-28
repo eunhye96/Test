@@ -773,14 +773,16 @@ function saveReviews(){
 }
 
 function toggleReviewEaten(name){
-  if(!reviews[name])reviews[name]={eaten:false,stars:0,comment:''};
+  if(!reviews[name])reviews[name]={eaten:false,stars:0,comments:[]};
+  if(!reviews[name].comments)reviews[name].comments=[];
   reviews[name].eaten=!reviews[name].eaten;
-  if(!reviews[name].eaten){reviews[name].stars=0;reviews[name].comment='';}
+  if(!reviews[name].eaten){reviews[name].stars=0;reviews[name].comments=[];}
   saveReviews();renderReview();
 }
 
 function setReviewStars(name,stars){
-  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:''};
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comments:[]};
+  if(!reviews[name].comments)reviews[name].comments=[];
   reviews[name].stars=stars;
   saveReviews();renderReview();
 }
