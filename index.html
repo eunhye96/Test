@@ -256,7 +256,11 @@ body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-s
 <div class="panel" id="panel-review">
   <div style="max-width:900px;margin:1.5rem auto;padding:0 1.5rem">
     <div style="text-align:center;font-family:'Gaegu',cursive;font-size:1.6rem;font-weight:700;color:var(--brown);margin-bottom:.5rem">📸 방문 후기</div>
-    <div style="text-align:center;font-size:.85rem;color:var(--text-light);margin-bottom:1.2rem">체크한 곳들의 별점과 한줄평을 남겨보세요!</div>
+    <div style="text-align:center;font-size:.85rem;color:var(--text-light);margin-bottom:1.2rem">일정에 있는 곳 + 직접 추가한 곳의 후기를 남겨보세요!</div>
+    <div style="display:flex;gap:.4rem;margin-bottom:1rem">
+      <input type="text" id="manualReviewInput" placeholder="가게 이름 직접 입력..." style="flex:1;padding:.5rem .8rem;border:2px solid var(--pink-light);border-radius:100px;font-size:.85rem;font-family:'Noto Sans KR',sans-serif;outline:none">
+      <button onclick="addManualReview()" style="padding:.5rem 1rem;border-radius:100px;border:none;background:var(--coral);color:#fff;font-family:'Gaegu',cursive;font-size:.95rem;font-weight:700;cursor:pointer;white-space:nowrap">+ 추가</button>
+    </div>
     <div id="reviewContent"></div>
   </div>
 </div>
@@ -787,6 +791,16 @@ function setReviewComment(name,val){
   saveReviews();
 }
 
+function addManualReview(){
+  var input=document.getElementById('manualReviewInput');
+  var name=input.value.trim();
+  if(!name)return;
+  if(!reviews[name])reviews[name]={eaten:true,stars:0,comment:'',manual:true};
+  else reviews[name].eaten=true;
+  input.value='';
+  saveReviews();renderReview();
+}
+
 function renderReview(){
   var el=document.getElementById('reviewContent');
   if(!el)return;
@@ -805,9 +819,16 @@ function renderReview(){
     });
   }
   
+  // Also add manual reviews that aren't in planner
+  for(var rname in reviews){
+    if(!plannerItems[rname]&&reviews[rname]){
+      plannerItems[rname]={days:['직접 추가']};
+    }
+  }
+  
   var names=Object.keys(plannerItems);
   if(!names.length){
-    el.innerHTML='<div class="review-empty">📅 일정에 가게를 추가하면 여기서 후기를 남길 수 있어요!</div>';
+    el.innerHTML='<div class="review-empty">📅 일정에 가게를 추가하거나 위에서 직접 입력해보세요!</div>';
     return;
   }
   
