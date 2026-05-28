@@ -1266,6 +1266,7 @@ function saveOfflineBackup(){
     localStorage.setItem('tokyoVisited',JSON.stringify(visited));
     localStorage.setItem('tokyoPlanner',JSON.stringify(planner));
     localStorage.setItem('tokyoReviews',JSON.stringify(reviews));
+    localStorage.setItem('tokyoSouvenirs',JSON.stringify(souvenirs));
   }catch(e){}
 }
 // Backup every 10 seconds
@@ -1281,7 +1282,8 @@ setTimeout(function(){
       planner.forEach(function(d){if(!d.meals)d.meals={};if(!d.meals['점심'])d.meals['점심']=[];if(!d.meals['저녁'])d.meals['저녁']=[];if(!d.meals['간식'])d.meals['간식']=[];if(!d.meals['관광'])d.meals['관광']=[];if(!d.meals['메모'])d.meals['메모']=[];});
     }catch(e){}
     try{reviews=JSON.parse(localStorage.getItem('tokyoReviews')||'{}');}catch(e){reviews={}}
-    renderPlanner();renderList();renderReview();
+    try{souvenirs=JSON.parse(localStorage.getItem('tokyoSouvenirs')||'[]');}catch(e){souvenirs=[]}
+    renderPlanner();renderList();renderReview();renderSouvenir();
   }
 },3000);
 </script>
